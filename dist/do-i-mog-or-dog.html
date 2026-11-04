@@ -1,0 +1,3354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Do I Mog or Dog</title>
+<meta name="description" content="Landmark-based facial geometry analyzer: frontal + profile morphometrics and a strict PSL verdict.">
+<meta name="theme-color" content="#0A0A0C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0C'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2339FF14' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%2300F0FF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Do I Mog or Dog — dark cybernetic theme */
+:root {
+  --bg: #0A0A0C;
+  --bg-2: #0F0F13;
+  --panel: #121217;
+  --panel-2: #17171E;
+  --line: #24242E;
+  --line-2: #32323F;
+  --text: #E9E9F1;
+  --muted: #8B8B9C;
+  --dim: #5C5C6B;
+  --neon: #39FF14;
+  --cyan: #00F0FF;
+  --magenta: #FF2BD6;
+  --amber: #FFB020;
+  --red: #FF2A3D;
+  --ideal: #39FF14;
+  --avg: #E0B84A;
+  --failo: #FF2A3D;
+  --tier: #39FF14;
+  --radius: 14px;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --display: "Orbitron", "Inter", system-ui, sans-serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(0, 240, 255, 0.06), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(57, 255, 20, 0.05), transparent 60%),
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--bg);
+  color: var(--text);
+  font: 15px/1.5 var(--sans);
+  overflow-x: hidden;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+h1, h2, h3 { margin: 0; font-family: var(--display); letter-spacing: 0.02em; }
+h1 { font-size: clamp(22px, 3.2vw, 32px); font-weight: 700; }
+h2 { font-size: 17px; font-weight: 700; }
+h3 { font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+.mono { font-family: var(--mono); }
+.eyebrow { font: 600 11px/1 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--neon); margin-bottom: 8px; }
+.lede { color: var(--muted); margin: 8px 0 0; max-width: 720px; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 20px; justify-content: space-between;
+  padding: 12px clamp(16px, 3vw, 32px);
+  background: rgba(10, 10, 12, 0.86);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-mark { width: 34px; height: 34px; color: var(--neon); filter: drop-shadow(0 0 8px rgba(57,255,20,.5)); flex: none; }
+.brand-name { font: 900 16px/1.1 var(--display); letter-spacing: 0.08em; white-space: nowrap; }
+.brand-name em { font-style: normal; color: var(--neon); text-shadow: 0 0 12px rgba(57,255,20,.55); }
+.brand-name em.dog { color: var(--red); text-shadow: 0 0 12px rgba(255,42,61,.55); }
+.brand-sub { font: 500 10px/1.4 var(--mono); color: var(--dim); letter-spacing: 0.12em; text-transform: uppercase; }
+
+.stepper { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.stepper button {
+  display: flex; align-items: center; gap: 8px; border: 0; background: transparent;
+  padding: 7px 14px; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 600;
+}
+.stepper button b { font: 700 11px var(--mono); color: var(--dim); }
+.stepper button.done b { color: var(--neon); }
+.stepper button.active { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
+.stepper button.active b { color: var(--cyan); }
+.stepper button.locked { opacity: .45; cursor: not-allowed; }
+
+.seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 7px; color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.seg button.on { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2), 0 0 12px rgba(0,240,255,.12); }
+.seg.small button { padding: 4px 10px; font-size: 12px; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line-2);
+  background: var(--panel-2); color: var(--text); font-weight: 600; font-size: 14px;
+  cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s, transform .1s;
+  white-space: nowrap; user-select: none;
+}
+.btn:hover:not(:disabled) { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,240,255,.08); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.ghost { background: transparent; }
+.btn.danger:hover:not(:disabled) { border-color: var(--red); box-shadow: 0 0 0 3px rgba(255,42,61,.1); color: #ff8f99; }
+.btn.primary {
+  background: linear-gradient(180deg, #4bff2c, #22c90a); color: #031000; border-color: transparent;
+  box-shadow: 0 0 22px rgba(57,255,20,.28);
+}
+.btn.primary:hover:not(:disabled) { box-shadow: 0 0 30px rgba(57,255,20,.45); border-color: transparent; }
+.btn.primary:disabled { background: var(--panel-2); color: var(--muted); box-shadow: none; border-color: var(--line-2); }
+.btn.big { padding: 13px 26px; font: 700 14px var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
+.icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--muted); flex: none; }
+.icon-btn:hover { color: var(--text); border-color: var(--cyan); }
+
+/* ---------- Screens ---------- */
+main { max-width: 1360px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 32px) 24px; }
+.screen-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 22px; flex-wrap: wrap; }
+.screen-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 22px;
+  padding-top: 18px; border-top: 1px solid var(--line); flex-wrap: wrap;
+}
+.foot-status { font: 500 12px var(--mono); color: var(--muted); flex: 1; text-align: center; min-width: 160px; }
+
+/* ---------- Capture ---------- */
+.capture-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.capture-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.capture-card > header { display: flex; align-items: center; gap: 10px; }
+.capture-card > header h2 { flex: 1; }
+.tag { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; background: rgba(0,240,255,.1); color: var(--cyan); font: 700 13px var(--mono); border: 1px solid rgba(0,240,255,.3); }
+.status-pill { font: 600 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); }
+.capture-card.has-photo .status-pill { color: var(--neon); border-color: rgba(57,255,20,.4); background: rgba(57,255,20,.07); }
+.viewport {
+  position: relative; width: 100%; aspect-ratio: 3 / 4; max-height: 64vh; margin: 0 auto;
+  border-radius: 10px; overflow: hidden; border: 1px dashed var(--line-2);
+  background: repeating-linear-gradient(45deg, #0d0d11 0 10px, #0b0b0e 10px 20px);
+}
+.viewport.drag { border-color: var(--neon); box-shadow: inset 0 0 0 2px rgba(57,255,20,.3); }
+.capture-card.has-photo .viewport { border-style: solid; }
+.viewport img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.capture-card:not(.has-photo) .viewport img { display: none; }
+.capture-card.has-photo .placeholder { display: none; }
+.placeholder { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; color: var(--dim); padding: 20px; pointer-events: none; z-index: 1; }
+.placeholder svg { width: 44px; height: 44px; margin-bottom: 8px; color: var(--muted); }
+.placeholder p { margin: 0; color: var(--muted); }
+.placeholder small { color: var(--dim); font-family: var(--mono); font-size: 11px; }
+.overlay { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.card-actions .btn { flex: 1 1 auto; }
+
+.guide-svg { width: 100%; height: 100%; overflow: visible; }
+.guide-svg .g-grid { stroke: rgba(255,255,255,.12); stroke-width: .6; }
+.guide-svg .g-center { stroke: var(--cyan); stroke-width: 1; stroke-dasharray: 5 4; opacity: .85; }
+.guide-svg .g-eye { stroke: var(--neon); stroke-width: 1; stroke-dasharray: 8 4; opacity: .9; }
+.guide-svg .g-fh { stroke: var(--amber); stroke-width: 1; stroke-dasharray: 3 3; }
+.guide-svg .g-sil { fill: none; stroke: rgba(255,255,255,.55); stroke-width: 1.4; stroke-dasharray: 2 3; }
+.guide-svg text { font: 600 7px var(--mono); letter-spacing: .12em; fill: var(--neon); }
+.guide-svg text.c { fill: var(--cyan); }
+.guide-svg text.a { fill: var(--amber); }
+
+/* ---------- Landmark editor ---------- */
+.view-tabs { display: flex; gap: 6px; }
+.view-tabs button {
+  border: 1px solid var(--line-2); background: var(--panel); padding: 9px 16px; border-radius: 10px;
+  font-weight: 700; color: var(--muted); display: flex; gap: 8px; align-items: center;
+}
+.view-tabs button span { font: 600 11px var(--mono); padding: 2px 7px; border-radius: 6px; background: var(--bg); color: var(--dim); }
+.view-tabs button.on { color: var(--text); border-color: var(--cyan); box-shadow: 0 0 16px rgba(0,240,255,.12); }
+.view-tabs button.complete span { color: var(--neon); }
+
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; }
+.stage {
+  position: relative; height: clamp(440px, calc(100vh - 300px), 980px); border-radius: var(--radius);
+  background: #060608; border: 1px solid var(--line); overflow: hidden; touch-action: none; user-select: none;
+}
+.stage canvas#editor-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.loupe {
+  position: absolute; left: 0; top: 0; border-radius: 50%; pointer-events: none; z-index: 5;
+  box-shadow: 0 0 0 2px var(--cyan), 0 0 26px rgba(0,240,255,.35), 0 10px 30px rgba(0,0,0,.6);
+  opacity: 0; transition: opacity .12s;
+}
+.loupe.on { opacity: 1; }
+.stage-tools { position: absolute; top: 10px; left: 10px; display: flex; gap: 4px; z-index: 4; flex-wrap: wrap; max-width: calc(100% - 20px); }
+.stage-tools button {
+  border: 1px solid var(--line-2); background: rgba(18,18,23,.88); backdrop-filter: blur(8px);
+  padding: 6px 10px; border-radius: 8px; font: 600 12px var(--mono); color: var(--muted); min-width: 34px;
+}
+.stage-tools button:hover { color: var(--text); border-color: var(--cyan); }
+.stage-tools button.on { color: var(--neon); border-color: rgba(57,255,20,.5); }
+.stage:not(.is-profile) .profile-only { display: none; }
+.stage-hud { position: absolute; left: 10px; bottom: 10px; z-index: 4; font: 500 11px var(--mono); color: var(--muted); background: rgba(10,10,12,.8); padding: 5px 9px; border-radius: 7px; border: 1px solid var(--line); pointer-events: none; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; min-height: 0; height: clamp(440px, calc(100vh - 300px), 980px); }
+.current { padding: 16px; border-bottom: 1px solid var(--line); }
+.current .cur-idx { font: 600 11px var(--mono); color: var(--dim); letter-spacing: .1em; }
+.current .cur-name { font: 700 17px var(--display); margin: 6px 0 2px; display: flex; align-items: center; gap: 8px; }
+.current .cur-name i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; flex: none; }
+.current .cur-id { font: 500 11px var(--mono); color: var(--cyan); word-break: break-all; }
+.current .cur-desc { color: var(--muted); font-size: 13px; margin: 8px 0 10px; }
+.current .cur-coord { font: 600 12px var(--mono); padding: 7px 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); color: var(--text); }
+.current .cur-coord.pending { color: var(--amber); border-color: rgba(255,176,32,.35); }
+.current .cur-nav { display: flex; gap: 6px; margin-top: 10px; }
+.current .cur-nav .btn { flex: 1; padding: 7px 8px; font-size: 12px; }
+
+.lm-list { flex: 1; overflow-y: auto; padding: 8px 8px 12px; min-height: 0; }
+.lm-group-h { font: 600 10px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 10px 8px 4px; }
+.lm-row {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; border: 1px solid transparent;
+  background: transparent; padding: 6px 8px; border-radius: 8px; font-size: 13px; color: var(--muted);
+}
+.lm-row:hover { background: var(--panel-2); color: var(--text); }
+.lm-row.sel { border-color: var(--cyan); background: rgba(0,240,255,.06); color: var(--text); }
+.lm-row .dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--dim); flex: none; }
+.lm-row.placed .dot { background: var(--c, var(--neon)); border-color: var(--c, var(--neon)); box-shadow: 0 0 6px var(--c, var(--neon)); }
+.lm-row .ab { font: 600 11px var(--mono); color: var(--dim); width: 44px; flex: none; }
+.lm-row.placed .ab { color: var(--text); }
+.lm-row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lm-row .extra { font: 600 9px var(--mono); color: var(--amber); border: 1px solid rgba(255,176,32,.4); padding: 1px 4px; border-radius: 4px; }
+.panel-actions { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+.panel-actions .btn { flex: 1; font-size: 12px; padding: 8px 10px; }
+
+/* ---------- Modal ---------- */
+.modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-start; justify-content: center; padding: clamp(12px, 3vw, 40px) 16px; background: rgba(4,4,6,.82); backdrop-filter: blur(10px); overflow-y: auto; }
+.modal-card { width: 100%; max-width: 1180px; background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(0,240,255,.05); }
+.cal-head, .cam-head { display: flex; justify-content: space-between; gap: 16px; padding: 22px 24px 8px; }
+.cal-head h2 { font-size: clamp(18px, 2.4vw, 24px); }
+.cal-head h2 span { color: var(--cyan); }
+.cal-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; padding: 16px 24px; }
+.cal-item { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px; transition: border-color .2s, box-shadow .2s; }
+.cal-item.ok { border-color: rgba(57,255,20,.45); box-shadow: 0 0 22px rgba(57,255,20,.08); }
+.cal-num { position: absolute; top: 14px; right: 16px; font: 700 12px var(--mono); color: var(--dim); }
+.cal-item.ok .cal-num { color: var(--neon); }
+.cal-item ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
+.cal-item ul b { color: var(--text); }
+.cal-viz { background: #0a0a0d; border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 8px; justify-items: center; min-height: 236px; align-content: start; }
+.cal-viz svg { width: 100%; max-width: 200px; height: auto; }
+.cal-readout { display: flex; flex-direction: column; align-items: center; font: 500 11px var(--mono); color: var(--muted); text-align: center; }
+.cal-readout b { font: 700 16px var(--mono); color: var(--text); }
+.cal-readout .ok { color: var(--neon); }
+.cal-readout .bad { color: var(--red); }
+.cal-readout .warn { color: var(--amber); }
+.cal-viz input[type=range] { width: 100%; accent-color: var(--neon); }
+.viz-skin { fill: #d6a587; }
+.viz-skin2 { fill: #b88566; }
+.viz-eye { fill: #1c1c22; }
+.viz-nose { fill: #c18c6d; stroke: #8a5c45; stroke-width: 1.2; }
+.viz-line { fill: none; stroke: #6b4334; stroke-width: 2; stroke-linecap: round; }
+.viz-ground { stroke: var(--dim); stroke-dasharray: 3 4; }
+.viz-pt { fill: var(--cyan); }
+.viz-fh { stroke: var(--amber); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.expr-list { list-style: none; padding: 4px 2px !important; margin: 0; width: 100%; display: grid; gap: 6px !important; }
+.expr-list li { display: flex; gap: 10px; align-items: center; color: var(--text) !important; font-size: 13px; padding: 6px 8px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); }
+.expr-list i { font-style: normal; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: rgba(0,240,255,.1); color: var(--cyan); font-size: 12px; flex: none; }
+.confirm { display: flex; gap: 10px; align-items: center; margin-top: auto; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-2); cursor: pointer; font-weight: 600; font-size: 13px; }
+.confirm input { width: 18px; height: 18px; accent-color: var(--neon); flex: none; }
+.cal-item.ok .confirm { border-color: rgba(57,255,20,.45); color: var(--neon); }
+.cal-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px 22px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.cal-sex { display: flex; align-items: center; gap: 10px; font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.cal-progress { font: 500 12px var(--mono); color: var(--muted); }
+.cal-progress b { color: var(--neon); }
+
+/* Camera */
+.modal-card.cam { max-width: 960px; }
+.cam-view { position: relative; margin: 10px 24px; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; max-height: 66vh; margin-inline: auto; width: calc(100% - 48px); }
+.cam-view video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.cam-view.mirror video { transform: scaleX(-1); }
+.cam-countdown { position: absolute; inset: 0; display: grid; place-items: center; font: 900 120px var(--display); color: var(--neon); text-shadow: 0 0 40px rgba(57,255,20,.7); pointer-events: none; z-index: 3; }
+.cam-error { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 30px; color: var(--muted); background: #0a0a0d; z-index: 4; }
+.cam-controls { display: flex; align-items: center; gap: 10px; padding: 6px 24px; flex-wrap: wrap; justify-content: center; }
+.cam-zoom { display: flex; align-items: center; gap: 8px; font: 600 12px var(--mono); color: var(--muted); }
+.cam-zoom input { accent-color: var(--neon); }
+.cam-tip { color: var(--muted); font-size: 12px; text-align: center; padding: 4px 24px 18px; margin: 0; }
+
+/* ---------- Scan overlay ---------- */
+.scan-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(4,4,6,.97); display: grid; place-items: center; padding: 20px; animation: fadein .25s ease; }
+.scan-overlay.out { animation: fadeout .35s ease forwards; }
+.scan-frame { width: min(1100px, 100%); display: grid; gap: 14px; }
+.scan-title { text-align: center; font: 700 clamp(14px, 2.4vw, 22px) var(--display); color: var(--neon); letter-spacing: .06em; text-shadow: 0 0 18px rgba(57,255,20,.6); }
+.blink { animation: blink .55s steps(2, start) infinite; }
+.scan-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.scan-panel { position: relative; height: min(56vh, 560px); border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,240,255,.3); background: #030304; box-shadow: 0 0 40px rgba(0,240,255,.08) inset; }
+.scan-panel canvas { width: 100%; height: 100%; display: block; }
+.scan-label { position: absolute; top: 10px; left: 12px; font: 600 10px var(--mono); letter-spacing: .16em; color: var(--cyan); }
+.scan-progress { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.scan-progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--neon)); box-shadow: 0 0 14px var(--neon); }
+.scan-sub { font: 600 12px var(--mono); color: var(--cyan); text-align: center; letter-spacing: .08em; text-transform: uppercase; min-height: 18px; }
+.scan-log { margin: 0; font: 500 11px/1.55 var(--mono); color: #3fdc72; height: 100px; overflow: hidden; opacity: .85; white-space: pre; }
+@keyframes blink { to { opacity: .25; } }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes fadeout { to { opacity: 0; } }
+
+/* ---------- Results ---------- */
+.reveal { display: grid; gap: 20px; }
+.hero-card {
+  position: relative; overflow: hidden; text-align: center;
+  background: radial-gradient(700px 300px at 50% 0%, color-mix(in srgb, var(--tier) 16%, transparent), transparent 70%), var(--panel);
+  border: 1px solid color-mix(in srgb, var(--tier) 45%, var(--line)); border-radius: 20px; padding: 28px 20px 22px;
+  box-shadow: 0 0 60px color-mix(in srgb, var(--tier) 12%, transparent);
+}
+.hero-card .eyebrow { color: var(--tier); }
+.stamp-wrap { height: 92px; display: grid; place-items: center; margin: 4px 0 2px; }
+.stamp {
+  display: inline-block; font: 900 clamp(24px, 5vw, 44px)/1 var(--display); letter-spacing: .08em; color: var(--tier);
+  border: 4px solid var(--tier); border-radius: 12px; padding: 10px 22px; transform: rotate(-4deg);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--tier) 70%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--tier) 35%, transparent), inset 0 0 22px color-mix(in srgb, var(--tier) 18%, transparent);
+  opacity: 0; mix-blend-mode: screen;
+}
+.stamp.slam { animation: slam .5s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+@keyframes slam { 0% { opacity: 0; transform: rotate(-12deg) scale(2.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: rotate(-4deg) scale(1); } }
+.odometer { display: inline-flex; align-items: flex-start; font: 900 clamp(64px, 13vw, 128px)/1 var(--display); color: #fff; filter: drop-shadow(0 0 18px color-mix(in srgb, var(--tier) 60%, transparent)); margin-top: 6px; }
+.odo-col { height: 1em; overflow: hidden; position: relative; width: .74em; }
+.odo-col span { display: block; height: 1em; text-align: center; }
+.odo-strip { will-change: transform; }
+.odo-dot { width: .3em; text-align: center; }
+.odo-max { font: 700 .22em var(--mono); color: var(--muted); align-self: flex-end; margin: 0 0 .5em .4em; text-shadow: none; }
+.tier-name { font: 700 clamp(15px, 2vw, 19px) var(--display); color: var(--tier); letter-spacing: .1em; margin-top: 4px; }
+.score-meta { display: flex; justify-content: center; gap: 8px 18px; flex-wrap: wrap; font: 500 12px var(--mono); color: var(--muted); margin-top: 10px; }
+.score-meta b { color: var(--text); }
+.cap-notice { margin: 14px auto 0; max-width: 640px; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,42,61,.5); background: rgba(255,42,61,.08); color: #ff9aa4; font: 600 12px/1.5 var(--mono); }
+.bell { width: 100%; max-width: 640px; margin: 16px auto 0; display: block; }
+.bell text { font: 500 9px var(--mono); fill: var(--dim); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; }
+.card > header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.card > header small { font: 500 11px var(--mono); color: var(--muted); }
+
+.gates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.gate { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-2); font-size: 13px; }
+.gate i { font-style: normal; font: 700 10px var(--mono); padding: 3px 7px; border-radius: 6px; flex: none; }
+.gate.pass i { color: var(--neon); background: rgba(57,255,20,.1); }
+.gate.fail { border-color: rgba(255,42,61,.55); background: rgba(255,42,61,.07); }
+.gate.fail i { color: #fff; background: var(--red); }
+.gate .gv { margin-left: auto; font: 600 12px var(--mono); color: var(--muted); }
+.gate.na { opacity: .5; }
+
+.factors { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.factors h4 { margin: 0 0 6px; font: 600 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+.factors .mog h4 { color: var(--neon); }
+.factors .dog h4 { color: var(--red); }
+.factors ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; }
+.factors li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; background: var(--bg-2); border-radius: 8px; border: 1px solid var(--line); }
+.factors li span { font: 600 12px var(--mono); color: var(--muted); }
+
+.radar { width: 100%; max-width: 440px; display: block; margin: 0 auto; }
+.radar text { font: 600 10px var(--mono); fill: var(--muted); }
+.radar .rv { font: 700 11px var(--mono); fill: var(--text); }
+.annot { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.annot canvas { width: 100%; aspect-ratio: 3 / 4; display: block; border-radius: 10px; background: #050507; border: 1px solid var(--line); }
+.subscores { display: flex; gap: 10px; margin-top: 12px; }
+.subscores div { flex: 1; padding: 10px 12px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); font: 500 11px var(--mono); color: var(--muted); }
+.subscores b { display: block; font: 700 20px var(--display); color: var(--text); margin-top: 2px; }
+
+.matrix { width: 100%; border-collapse: collapse; font-size: 13px; }
+.matrix th { text-align: left; font: 600 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); padding: 0 8px 8px; border-bottom: 1px solid var(--line); }
+.matrix td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.matrix tr:last-child td { border-bottom: 0; }
+.matrix td small { display: block; color: var(--dim); font: 500 10.5px/1.4 var(--mono); margin-top: 3px; }
+.matrix td.v { font: 700 14px var(--mono); white-space: nowrap; }
+.matrix td.t { font: 500 12px var(--mono); color: var(--muted); }
+.matrix .gate-mark { color: var(--amber); font: 700 9px var(--mono); border: 1px solid rgba(255,176,32,.45); padding: 1px 4px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+.pill { display: inline-block; font: 700 10px var(--mono); letter-spacing: .06em; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+.pill.ideal { color: #062000; background: var(--ideal); box-shadow: 0 0 12px rgba(57,255,20,.35); }
+.pill.average { color: #1d1500; background: var(--avg); }
+.pill.failo { color: #fff; background: var(--failo); box-shadow: 0 0 12px rgba(255,42,61,.35); }
+.pill.na { color: var(--muted); border: 1px solid var(--line-2); }
+.matrix tr.st-failo td.v { color: #ff7d89; }
+.matrix tr.st-ideal td.v { color: #8dff76; }
+
+.warnings { display: grid; gap: 6px; }
+.warnings div { font: 500 12px var(--mono); color: var(--amber); padding: 8px 12px; border: 1px solid rgba(255,176,32,.3); border-radius: 8px; background: rgba(255,176,32,.05); }
+.result-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--panel-2); border: 1px solid var(--line-2); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: .2s; z-index: 120; max-width: calc(100% - 32px); }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+.disclaimer { max-width: 1360px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 32px) 32px; color: var(--dim); font-size: 12px; text-align: center; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .cal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .topbar { flex-wrap: wrap; }
+  .stepper { order: 3; width: 100%; justify-content: space-between; }
+}
+@media (max-width: 980px) {
+  .editor { grid-template-columns: 1fr; }
+  .stage { height: 62vh; min-height: 380px; }
+  .panel { height: auto; max-height: none; }
+  .lm-list { max-height: 300px; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .gates { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 760px) {
+  .capture-grid { grid-template-columns: 1fr; }
+  .cal-grid { grid-template-columns: 1fr; padding: 12px 16px; }
+  .cal-head, .cal-foot { padding-inline: 16px; }
+  .scan-panels { gap: 8px; }
+  .scan-panel { height: 42vh; }
+  .stepper button span { display: none; }
+  .stepper button { padding: 7px 12px; }
+  .gates, .factors, .annot { grid-template-columns: 1fr; }
+  .annot canvas { max-width: 420px; margin: 0 auto; width: 100%; }
+}
+@media (max-width: 640px) {
+  .matrix thead { display: none; }
+  .matrix, .matrix tbody, .matrix tr, .matrix td { display: block; width: 100%; }
+  .matrix tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .matrix td { border: 0; padding: 2px 0; }
+  .matrix td:nth-child(1) { grid-column: 1 / -1; }
+  .matrix td.t { grid-column: 1; }
+  .matrix td:nth-child(4) { grid-column: 2; grid-row: 2 / span 2; align-self: center; }
+  .screen-foot .foot-status { order: -1; flex-basis: 100%; }
+  .brand-sub { display: none; }
+}
+
+.matrix td .nw { white-space: nowrap; }
+.radar { max-width: 520px; }
+@media (max-width: 1240px) {
+  .matrix-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .topbar { position: static; gap: 12px; }
+}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 2v6M16 24v6M2 16h6M24 16h6" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="3" fill="#00F0FF"/></svg>
+    <div>
+      <div class="brand-name">DO I <em>MOG</em> OR <em class="dog">DOG</em></div>
+      <div class="brand-sub">PSL Morphometric Engine · v1.0</div>
+    </div>
+  </div>
+  <nav class="stepper" id="stepper" aria-label="Workflow">
+    <button data-step="calibrate"><b>01</b><span>Calibrate</span></button>
+    <button data-step="capture"><b>02</b><span>Capture</span></button>
+    <button data-step="landmarks"><b>03</b><span>Landmarks</span></button>
+    <button data-step="results"><b>04</b><span>Verdict</span></button>
+  </nav>
+  <div class="seg" data-sex-seg role="group" aria-label="Scoring standard">
+    <button data-sex="male">♂ Male</button><button data-sex="female">♀ Female</button>
+  </div>
+</header>
+
+<main>
+  <!-- STEP 02: CAPTURE -->
+  <section class="screen" id="screen-capture">
+    <div class="screen-head">
+      <div>
+        <div class="eyebrow">Step 02 · Image Acquisition</div>
+        <h1>Capture Frontal &amp; Profile</h1>
+        <p class="lede">Two calibrated photos: telephoto, flat light, neutral face, Frankfurt plane level. Garbage in, garbage verdict.</p>
+      </div>
+      <button class="btn ghost" data-open="calibration">⚙ Calibration Protocol</button>
+    </div>
+
+    <div class="capture-grid">
+      <article class="capture-card" data-view="frontal">
+        <header>
+          <span class="tag">A</span>
+          <h2>Frontal View</h2>
+          <span class="status-pill" data-role="status">Awaiting</span>
+        </header>
+        <div class="viewport" data-role="viewport">
+          <img data-role="photo" alt="Frontal photo">
+          <div class="overlay" data-role="overlay"></div>
+          <div class="placeholder">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="10" width="40" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="25" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10l3-5h10l3 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            <p>Drop a frontal photo here<br><small>Face camera squarely · eyes on the EYE LEVEL line</small></p>
+          </div>
+        </div>
+        <div class="card-actions">
+          <label class="btn">⇪ Upload<input type="file" accept="image/*" hidden data-role="file"></label>
+          <button class="btn" data-role="camera">◉ Camera</button>
+          <button class="btn ghost" data-role="guides">Guides</button>
+          <button class="btn ghost danger" data-role="clear">Clear</button>
+        </div>
+      </article>
+
+      <article class="capture-card" data-view="profile">
+        <header>
+          <span class="tag">B</span>
+          <h2>Profile View (90°)</h2>
+          <span class="status-pill" data-role="status">Awaiting</span>
+        </header>
+        <div class="viewport" data-role="viewport">
+          <img data-role="photo" alt="Profile photo">
+          <div class="overlay" data-role="overlay"></div>
+          <div class="placeholder">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="10" width="40" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="25" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10l3-5h10l3 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            <p>Drop a true 90° side profile here<br><small>Ear visible · jaw relaxed · FH plane level</small></p>
+          </div>
+        </div>
+        <div class="card-actions">
+          <label class="btn">⇪ Upload<input type="file" accept="image/*" hidden data-role="file"></label>
+          <button class="btn" data-role="camera">◉ Camera</button>
+          <button class="btn ghost" data-role="facing" title="Which way the face points in the photo">Facing ▶</button>
+          <button class="btn ghost" data-role="guides">Guides</button>
+          <button class="btn ghost danger" data-role="clear">Clear</button>
+        </div>
+      </article>
+    </div>
+
+    <div class="screen-foot">
+      <button class="btn ghost" id="btn-demo">⚗ Load Demo Subject</button>
+      <div class="foot-status" id="capture-status"></div>
+      <button class="btn primary" id="btn-to-landmarks" disabled>Place Landmarks →</button>
+    </div>
+  </section>
+
+  <!-- STEP 03: LANDMARKS -->
+  <section class="screen" id="screen-landmarks" hidden>
+    <div class="screen-head">
+      <div>
+        <div class="eyebrow">Step 03 · Landmark Registration</div>
+        <h1>Place Anatomical Nodes</h1>
+        <p class="lede">Click the photo to drop the highlighted node, drag any node to refine. The loupe magnifies 2.5×. Arrow keys nudge 1 px (Shift 10 px, Alt 0.25 px). Scroll or pinch to zoom.</p>
+      </div>
+      <div class="view-tabs" id="view-tabs" role="tablist">
+        <button data-view="frontal" role="tab">Frontal <span data-count="frontal">0/0</span></button>
+        <button data-view="profile" role="tab">Profile <span data-count="profile">0/0</span></button>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="stage" id="stage">
+        <canvas id="editor-canvas" aria-label="Landmark placement canvas"></canvas>
+        <canvas id="loupe" class="loupe" aria-hidden="true"></canvas>
+        <div class="stage-tools" id="stage-tools">
+          <button data-tool="place" class="on" title="Place and drag nodes">✛ Place</button>
+          <button data-tool="pan" title="Pan the photo (or hold Space)">✥ Pan</button>
+          <button data-tool="zoom-in" title="Zoom in">＋</button>
+          <button data-tool="zoom-out" title="Zoom out">－</button>
+          <button data-tool="fit" title="Fit photo">Fit</button>
+          <button data-tool="facing" class="profile-only" title="Profile facing direction (affects template seeding)">Facing ▶</button>
+        </div>
+        <div class="stage-hud" id="stage-hud"></div>
+      </div>
+      <aside class="panel">
+        <div class="current" id="lm-current"></div>
+        <div class="lm-list" id="lm-list"></div>
+        <div class="panel-actions">
+          <button class="btn" id="btn-seed" title="Drop every unplaced node at its template position, then drag to fit">⌖ Auto-Seed Template</button>
+          <button class="btn ghost danger" id="btn-clear-view">Clear View</button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="screen-foot">
+      <button class="btn ghost" data-goto="capture">← Photos</button>
+      <div class="foot-status" id="lm-status"></div>
+      <button class="btn primary big" id="btn-analyze" disabled>Analyze Face</button>
+    </div>
+  </section>
+
+  <!-- STEP 04: RESULTS -->
+  <section class="screen" id="screen-results" hidden>
+    <div id="results-root"></div>
+  </section>
+</main>
+
+<footer class="disclaimer">
+  Entertainment tool. Single-photo 2D landmark geometry is noisy, and these community "PSL" thresholds are heuristics, not clinical or scientific measures of attractiveness or worth. Photos never leave your device.
+</footer>
+
+<!-- CALIBRATION PROTOCOL -->
+<div class="modal" id="calibration-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cal-title">
+  <div class="modal-card cal">
+    <header class="cal-head">
+      <div>
+        <div class="eyebrow">Step 01 · Pre-Capture</div>
+        <h2 id="cal-title">Do I Mog or Dog: <span>Calibration Protocol</span></h2>
+        <p class="lede">Lens distortion, lighting and head posture swing these measurements by whole tiers. Confirm each control before capture.</p>
+      </div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="cal-grid">
+      <section class="cal-item" data-key="focal">
+        <div class="cal-num">01</div>
+        <h3>Focal Length Calibration</h3>
+        <div class="cal-viz">
+          <svg viewBox="0 0 200 170" id="focal-svg" aria-hidden="true">
+            <ellipse id="focal-ear-l" cx="52" cy="88" rx="9" ry="18" class="viz-skin2"/>
+            <ellipse id="focal-ear-r" cx="148" cy="88" rx="9" ry="18" class="viz-skin2"/>
+            <ellipse cx="100" cy="85" rx="48" ry="62" class="viz-skin"/>
+            <ellipse cx="82" cy="74" rx="9" ry="4" class="viz-eye"/><ellipse cx="118" cy="74" rx="9" ry="4" class="viz-eye"/>
+            <ellipse id="focal-nose" cx="100" cy="98" rx="9" ry="13" class="viz-nose"/>
+            <path d="M86 122 Q100 127 114 122" class="viz-line"/>
+          </svg>
+          <div class="cal-readout"><b id="focal-dist">6.5 ft</b><span id="focal-distortion">+2.9% nasal inflation</span></div>
+          <input type="range" id="focal-range" min="1" max="10" step="0.5" value="6.5" aria-label="Camera distance in feet">
+        </div>
+        <ul>
+          <li>Shoot from <b>≥ 6 ft (2 m)</b> away using <b>2× / 3× optical zoom</b>.</li>
+          <li>Selfie-distance wide-angle lenses inflate midface length and nose size and hide the ears.</li>
+        </ul>
+        <label class="confirm"><input type="checkbox"><span>Telephoto from ≥ 6 ft confirmed</span></label>
+      </section>
+
+      <section class="cal-item" data-key="light">
+        <div class="cal-num">02</div>
+        <h3>Lighting</h3>
+        <div class="cal-viz">
+          <svg viewBox="0 0 200 170" aria-hidden="true">
+            <defs>
+              <radialGradient id="lg-flat" cx="50%" cy="45%" r="65%"><stop offset="0" stop-color="#e2b496"/><stop offset="1" stop-color="#c6957a"/></radialGradient>
+              <linearGradient id="lg-top" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3caa9"/><stop offset=".38" stop-color="#c38f72"/><stop offset=".45" stop-color="#5a3a2c"/><stop offset=".6" stop-color="#9c6e56"/><stop offset="1" stop-color="#3d281e"/></linearGradient>
+              <linearGradient id="lg-side" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f6cfae"/><stop offset=".5" stop-color="#b98468"/><stop offset="1" stop-color="#2e1e17"/></linearGradient>
+            </defs>
+            <ellipse cx="100" cy="85" rx="48" ry="62" id="light-face" fill="url(#lg-flat)"/>
+            <ellipse cx="82" cy="74" rx="9" ry="4" class="viz-eye"/><ellipse cx="118" cy="74" rx="9" ry="4" class="viz-eye"/>
+            <path d="M100 80 L96 104 Q100 108 104 104" class="viz-line"/>
+            <path d="M86 122 Q100 127 114 122" class="viz-line"/>
+          </svg>
+          <div class="seg small" id="light-seg">
+            <button data-light="flat" class="on">Flat</button><button data-light="top">Top-down</button><button data-light="side">Side</button>
+          </div>
+          <div class="cal-readout"><span id="light-note" class="ok">✓ Even, shadow-less: true geometry visible</span></div>
+        </div>
+        <ul>
+          <li><b>Flat, shadow-less frontal light</b> (window or ring light in front).</li>
+          <li>Top-down light fakes brow ridge projection; side light distorts symmetry.</li>
+        </ul>
+        <label class="confirm"><input type="checkbox"><span>Flat frontal lighting confirmed</span></label>
+      </section>
+
+      <section class="cal-item" data-key="expr">
+        <div class="cal-num">03</div>
+        <h3>Neutral Posture &amp; Expression</h3>
+        <div class="cal-viz">
+          <ul class="expr-list">
+            <li><i>◉</i> Strictly neutral face</li>
+            <li><i>▤</i> Teeth closed in occlusion</li>
+            <li><i>◡</i> Soft lip closure, no strain</li>
+            <li><i>✕</i> No smiling</li>
+            <li><i>◎</i> No squinting, eyes relaxed</li>
+            <li><i>↧</i> Shoulders down, no chin tuck</li>
+          </ul>
+        </div>
+        <ul>
+          <li>Smiling raises the cheilion and compresses the eye area; squinting fakes positive tilt.</li>
+        </ul>
+        <label class="confirm"><input type="checkbox"><span>Neutral expression confirmed</span></label>
+      </section>
+
+      <section class="cal-item" data-key="fh">
+        <div class="cal-num">04</div>
+        <h3>Frankfurt Horizontal Plane</h3>
+        <div class="cal-viz">
+          <svg viewBox="0 0 200 170" aria-hidden="true">
+            <line x1="0" y1="80" x2="200" y2="80" class="viz-ground"/>
+            <g id="fh-head" transform="rotate(0 100 85)">
+              <path class="viz-skin" d="M70 150 C70 135 66 125 60 115 C46 100 42 72 50 52 C60 26 86 14 112 16 C134 18 146 34 148 50 C150 58 150 64 149 68 L160 92 C162 96 157 98 153 98 C154 104 152 108 150 112 C152 118 148 126 140 130 C132 134 124 132 118 134 C116 140 116 146 118 150 Z"/>
+              <ellipse cx="82" cy="78" rx="7" ry="11" class="viz-skin2"/>
+              <circle cx="82" cy="72" r="2.6" class="viz-pt"/>
+              <circle cx="138" cy="72" r="2.6" class="viz-pt"/>
+              <line x1="60" y1="72" x2="170" y2="72" class="viz-fh"/>
+            </g>
+          </svg>
+          <div class="cal-readout"><b id="fh-angle">+6°</b><span id="fh-note">Head pitched up: tilt down</span></div>
+          <input type="range" id="fh-range" min="-15" max="15" step="1" value="6" aria-label="Head pitch in degrees">
+        </div>
+        <ul>
+          <li>The line from the <b>infraorbital rim</b> (orbitale) to the <b>top of the ear canal</b> (porion) must be <b>0°, parallel to the ground</b>.</li>
+          <li>Chin up flattens the jaw and shrinks the gonial angle; chin down does the reverse.</li>
+        </ul>
+        <label class="confirm"><input type="checkbox"><span>Frankfurt plane level confirmed</span></label>
+      </section>
+    </div>
+
+    <footer class="cal-foot">
+      <div class="cal-sex"><span>Scoring standard</span>
+        <div class="seg" data-sex-seg><button data-sex="male">♂ Male</button><button data-sex="female">♀ Female</button></div>
+      </div>
+      <div class="cal-progress"><b id="cal-count">0/4</b> controls confirmed</div>
+      <button class="btn primary" id="cal-go" disabled>Initialize Protocol →</button>
+    </footer>
+  </div>
+</div>
+
+<!-- CAMERA -->
+<div class="modal" id="camera-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cam-title">
+  <div class="modal-card cam">
+    <header class="cam-head">
+      <div><div class="eyebrow">Live Capture</div><h2 id="cam-title">Frontal View</h2></div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </header>
+    <div class="cam-view" id="cam-view">
+      <video id="cam-video" playsinline muted autoplay></video>
+      <div class="overlay" id="cam-overlay"></div>
+      <div class="cam-countdown" id="cam-countdown"></div>
+      <div class="cam-error" id="cam-error" hidden></div>
+    </div>
+    <div class="cam-controls">
+      <button class="btn ghost" id="cam-flip">⟲ Switch Camera</button>
+      <label class="cam-zoom" id="cam-zoom-wrap" hidden>Zoom <input type="range" id="cam-zoom" min="1" max="3" step="0.1" value="1"> <b id="cam-zoom-val">1.0×</b></label>
+      <div class="seg small" id="cam-timer"><button data-t="0" class="on">No timer</button><button data-t="3">3 s</button><button data-t="10">10 s</button></div>
+      <button class="btn primary" id="cam-shoot">● Capture</button>
+    </div>
+    <p class="cam-tip">Stand ≥ 6 ft (2 m) away and use 2×–3× zoom. Put your eyes on the EYE LEVEL line and your nose on the centerline. Use the 10 s timer with a tripod.</p>
+  </div>
+</div>
+
+<!-- SCAN SEQUENCE -->
+<div class="scan-overlay" id="scan-overlay" hidden aria-live="polite">
+  <div class="scan-frame">
+    <div class="scan-title"><span class="blink">Extracting Gonial &amp; Midface Vector Data...</span></div>
+    <div class="scan-panels">
+      <div class="scan-panel"><canvas data-view="frontal"></canvas><span class="scan-label">FRONTAL · MESH</span></div>
+      <div class="scan-panel"><canvas data-view="profile"></canvas><span class="scan-label">PROFILE · MESH</span></div>
+    </div>
+    <div class="scan-progress"><i id="scan-bar"></i></div>
+    <div class="scan-sub" id="scan-sub"></div>
+    <pre class="scan-log" id="scan-log"></pre>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* js/geometry.js */
+/* Do I Mog or Dog — vector math, statistics and triangulation helpers */
+(function (M) {
+  'use strict';
+
+  const DEG = 180 / Math.PI;
+
+  const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y });
+  const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
+  const mul = (a, k) => ({ x: a.x * k, y: a.y * k });
+  const dot = (a, b) => a.x * b.x + a.y * b.y;
+  const cross = (a, b) => a.x * b.y - a.y * b.x;
+  const len = (a) => Math.hypot(a.x, a.y);
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  const norm = (a) => { const l = len(a) || 1; return { x: a.x / l, y: a.y / l }; };
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // Unsigned angle (degrees, 0–180) between two vectors.
+  function angleBetween(u, v) {
+    const l = len(u) * len(v);
+    if (!l) return NaN;
+    return Math.acos(clamp(dot(u, v) / l, -1, 1)) * DEG;
+  }
+  // Interior angle at `vertex` formed by rays to `a` and `b`.
+  const angleAt = (vertex, a, b) => angleBetween(sub(a, vertex), sub(b, vertex));
+
+  // Abramowitz & Stegun 7.1.26 (max error 1.5e-7)
+  function erf(x) {
+    const s = Math.sign(x);
+    x = Math.abs(x);
+    const t = 1 / (1 + 0.3275911 * x);
+    const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return s * y;
+  }
+  const normCdf = (z) => 0.5 * (1 + erf(z / Math.SQRT2));
+  const normPdf = (z) => Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
+
+  function circumcircle(a, b, c) {
+    const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+    if (Math.abs(d) < 1e-9) return { x: 0, y: 0, r2: Infinity };
+    const a2 = a.x * a.x + a.y * a.y, b2 = b.x * b.x + b.y * b.y, c2 = c.x * c.x + c.y * c.y;
+    const x = (a2 * (b.y - c.y) + b2 * (c.y - a.y) + c2 * (a.y - b.y)) / d;
+    const y = (a2 * (c.x - b.x) + b2 * (a.x - c.x) + c2 * (b.x - a.x)) / d;
+    return { x, y, r2: (a.x - x) ** 2 + (a.y - y) ** 2 };
+  }
+
+  // Bowyer–Watson Delaunay triangulation; returns unique edges as index pairs.
+  function delaunayEdges(points) {
+    const n = points.length;
+    if (n < 2) return [];
+    if (n === 2) return [[0, 1]];
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of points) {
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+    }
+    const d = Math.max(maxX - minX, maxY - minY, 1) * 20;
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const P = points.map((p) => ({ x: p.x, y: p.y }))
+      .concat([{ x: cx - d, y: cy - d }, { x: cx + d, y: cy - d }, { x: cx, y: cy + d }]);
+    const tri = (a, b, c) => ({ a, b, c, cc: circumcircle(P[a], P[b], P[c]) });
+    const key = (u, v) => (u < v ? u + ',' + v : v + ',' + u);
+
+    let tris = [tri(n, n + 1, n + 2)];
+    for (let i = 0; i < n; i++) {
+      const p = P[i];
+      const keep = [];
+      const edges = new Map();
+      for (const t of tris) {
+        const dx = p.x - t.cc.x, dy = p.y - t.cc.y;
+        if (dx * dx + dy * dy <= t.cc.r2) {
+          for (const [u, v] of [[t.a, t.b], [t.b, t.c], [t.c, t.a]]) {
+            const k = key(u, v);
+            edges.set(k, (edges.get(k) || 0) + 1);
+          }
+        } else keep.push(t);
+      }
+      tris = keep;
+      for (const [k, count] of edges) {
+        if (count !== 1) continue;
+        const [u, v] = k.split(',').map(Number);
+        tris.push(tri(u, v, i));
+      }
+    }
+    const out = new Set();
+    for (const t of tris) {
+      for (const [u, v] of [[t.a, t.b], [t.b, t.c], [t.c, t.a]]) {
+        if (u < n && v < n) out.add(key(u, v));
+      }
+    }
+    return [...out].map((k) => k.split(',').map(Number));
+  }
+
+  // Deterministic PRNG for repeatable animations / demo jitter.
+  function rng(seed) {
+    let s = seed >>> 0 || 1;
+    return () => {
+      s ^= s << 13; s ^= s >>> 17; s ^= s << 5;
+      return ((s >>> 0) % 100000) / 100000;
+    };
+  }
+
+  M.geo = {
+    DEG, sub, add, mul, dot, cross, len, dist, mid, norm, clamp, lerp,
+    angleBetween, angleAt, erf, normCdf, normPdf, delaunayEdges, rng,
+  };
+})(window.MOG = window.MOG || {});
+
+</script>
+<script>
+/* js/landmarks.js */
+/* Do I Mog or Dog — landmark definitions, template seeds and guide connections */
+(function (M) {
+  'use strict';
+
+  // t = template position inside the face box (x: 0–1 across, y: 0–1 down).
+  // Frontal "Left_*" is the SUBJECT's left, which appears on the image RIGHT in a non-mirrored photo.
+  const FRONTAL = [
+    { id: 'Hairline_Trichion', abbr: 'Tr', name: 'Trichion', group: 'Midline', desc: 'Center of the hairline on the facial midline.', t: [0.5, 0.085] },
+    { id: 'Glabella', abbr: 'G', name: 'Glabella', group: 'Midline', desc: 'Most prominent point between the eyebrows.', t: [0.5, 0.33] },
+    { id: 'Subnasale', abbr: 'Sn', name: 'Subnasale', group: 'Midline', desc: 'Base of the nose where the septum meets the philtrum.', t: [0.5, 0.575] },
+    { id: 'Menton', abbr: 'Me', name: 'Menton', group: 'Midline', desc: 'Lowest point of the chin contour.', t: [0.5, 0.82] },
+    { id: 'Left_Inner_Canthus', abbr: 'En·L', name: 'Left Inner Canthus', group: 'Eyes', desc: 'Medial corner of the subject\'s left eye (image right).', t: [0.577, 0.40] },
+    { id: 'Right_Inner_Canthus', abbr: 'En·R', name: 'Right Inner Canthus', group: 'Eyes', desc: 'Medial corner of the subject\'s right eye (image left).', t: [0.423, 0.40] },
+    { id: 'Left_Outer_Canthus', abbr: 'Ex·L', name: 'Left Outer Canthus', group: 'Eyes', desc: 'Lateral corner of the subject\'s left eye.', t: [0.732, 0.39] },
+    { id: 'Right_Outer_Canthus', abbr: 'Ex·R', name: 'Right Outer Canthus', group: 'Eyes', desc: 'Lateral corner of the subject\'s right eye.', t: [0.268, 0.39] },
+    { id: 'Left_Pupil', abbr: 'P·L', name: 'Left Pupil', group: 'Eyes', desc: 'Center of the subject\'s left pupil.', t: [0.655, 0.40] },
+    { id: 'Right_Pupil', abbr: 'P·R', name: 'Right Pupil', group: 'Eyes', desc: 'Center of the subject\'s right pupil.', t: [0.345, 0.40] },
+    { id: 'Left_Upper_Eyelid', abbr: 'Ps·L', name: 'Left Upper Eyelid', group: 'Eyes', desc: 'Top margin of the left upper eyelid, above the pupil.', t: [0.655, 0.383] },
+    { id: 'Right_Upper_Eyelid', abbr: 'Ps·R', name: 'Right Upper Eyelid', group: 'Eyes', desc: 'Top margin of the right upper eyelid, above the pupil.', t: [0.345, 0.383] },
+    { id: 'Left_Lower_Eyelid', abbr: 'Pi·L', name: 'Left Lower Eyelid', group: 'Eyes', desc: 'Bottom margin of the left lower eyelid, below the pupil.', t: [0.655, 0.418] },
+    { id: 'Right_Lower_Eyelid', abbr: 'Pi·R', name: 'Right Lower Eyelid', group: 'Eyes', desc: 'Bottom margin of the right lower eyelid, below the pupil.', t: [0.345, 0.418] },
+    { id: 'Left_Zygoma', abbr: 'Zy·L', name: 'Left Zygoma', group: 'Cheekbones', desc: 'Widest point of the left lateral cheekbone.', t: [0.90, 0.445] },
+    { id: 'Right_Zygoma', abbr: 'Zy·R', name: 'Right Zygoma', group: 'Cheekbones', desc: 'Widest point of the right lateral cheekbone.', t: [0.10, 0.445] },
+    { id: 'Left_Gonion', abbr: 'Go·L', name: 'Left Gonion', group: 'Jaw', desc: 'Outer angle of the lower jaw, left side.', t: [0.84, 0.70] },
+    { id: 'Right_Gonion', abbr: 'Go·R', name: 'Right Gonion', group: 'Jaw', desc: 'Outer angle of the lower jaw, right side.', t: [0.16, 0.70] },
+    { id: 'Left_Alar', abbr: 'Al·L', name: 'Left Alar', group: 'Nose', desc: 'Widest point of the left nostril wing.', t: [0.59, 0.555] },
+    { id: 'Right_Alar', abbr: 'Al·R', name: 'Right Alar', group: 'Nose', desc: 'Widest point of the right nostril wing.', t: [0.41, 0.555] },
+    { id: 'Left_Cheilion', abbr: 'Ch·L', name: 'Left Cheilion', group: 'Mouth', desc: 'Outer corner of the mouth, left side.', t: [0.63, 0.655] },
+    { id: 'Right_Cheilion', abbr: 'Ch·R', name: 'Right Cheilion', group: 'Mouth', desc: 'Outer corner of the mouth, right side.', t: [0.37, 0.655] },
+    { id: 'Labiale_Superius', abbr: 'Ls', name: 'Labiale Superius', group: 'Mouth', desc: 'Midpoint of the upper lip\'s top border (vermilion).', t: [0.5, 0.63] },
+    { id: 'Labiale_Inferius', abbr: 'Li', name: 'Labiale Inferius', group: 'Mouth', desc: 'Midpoint of the lower lip\'s bottom border.', t: [0.5, 0.705] },
+  ];
+
+  // Profile template faces RIGHT (anterior = +x); mirrored when the subject faces left.
+  const PROFILE = [
+    { id: 'Profile_Trichion', abbr: 'Tr′', name: 'Trichion', group: 'Cranial', desc: 'Top of the hairline in profile.', t: [0.60, 0.10] },
+    { id: 'Profile_Glabella', abbr: 'G′', name: 'Glabella', group: 'Cranial', desc: 'Most prominent point of the forehead / brow bridge.', t: [0.66, 0.33] },
+    { id: 'Profile_Nasion', abbr: 'N′', name: 'Nasion', group: 'Nose', desc: 'Deepest depression of the nasal bridge.', t: [0.645, 0.375] },
+    { id: 'Profile_Nasal_Tip', abbr: 'Prn', name: 'Nasal Tip', group: 'Nose', desc: 'Most anterior point of the nose (pronasale).', t: [0.76, 0.545] },
+    { id: 'Profile_Subnasale', abbr: 'Sn′', name: 'Subnasale', group: 'Nose', desc: 'Junction of the nasal septum and the upper lip.', t: [0.68, 0.57] },
+    { id: 'Profile_Labiale_Superius', abbr: 'Ls′', name: 'Labiale Superius', group: 'Lips', desc: 'Most anterior point of the upper lip.', t: [0.70, 0.615] },
+    { id: 'Profile_Labiale_Inferius', abbr: 'Li′', name: 'Labiale Inferius', group: 'Lips', desc: 'Most anterior point of the lower lip.', t: [0.69, 0.685] },
+    { id: 'Profile_Mentolabial_Sulcus', abbr: 'Sm′', name: 'Mentolabial Sulcus', group: 'Lips', extra: true, desc: 'Deepest point of the crease between lower lip and chin. Needed for the mentolabial angle.', t: [0.65, 0.72] },
+    { id: 'Profile_Pogonion', abbr: 'Pog′', name: 'Pogonion', group: 'Chin', desc: 'Most anterior point of the chin.', t: [0.67, 0.76] },
+    { id: 'Profile_Menton', abbr: 'Me′', name: 'Menton', group: 'Chin', desc: 'Lowest point of the chin.', t: [0.62, 0.80] },
+    { id: 'Profile_Gonion', abbr: 'Go′', name: 'Gonion', group: 'Mandible', desc: 'Posterior-inferior angle of the mandible.', t: [0.42, 0.732] },
+    { id: 'Profile_Ramus_Top', abbr: 'Ra′', name: 'Ramus Top', group: 'Mandible', desc: 'Highest visible point of the vertical ramus (condyle junction, just in front of the ear).', t: [0.39, 0.50] },
+    { id: 'Profile_Cornea', abbr: 'Co′', name: 'Cornea', group: 'Orbit', desc: 'Most anterior surface of the eye bulge.', t: [0.62, 0.43] },
+    { id: 'Profile_Infraorbital_Rim', abbr: 'Or′', name: 'Infraorbital Rim', group: 'Orbit', desc: 'Bony rim under the lower eyelid, at its most anterior point.', t: [0.622, 0.47] },
+    { id: 'Profile_Submental_Point', abbr: 'C′', name: 'Submental Point', group: 'Neck', desc: 'Junction where the underside of the chin meets the neck.', t: [0.50, 0.815] },
+  ];
+
+  const FRONTAL_CONN = [
+    ['Hairline_Trichion', 'Glabella'], ['Glabella', 'Subnasale'], ['Subnasale', 'Labiale_Superius'], ['Labiale_Inferius', 'Menton'],
+    ['Right_Outer_Canthus', 'Right_Inner_Canthus'], ['Left_Inner_Canthus', 'Left_Outer_Canthus'], ['Right_Pupil', 'Left_Pupil'],
+    ['Right_Upper_Eyelid', 'Right_Lower_Eyelid'], ['Left_Upper_Eyelid', 'Left_Lower_Eyelid'],
+    ['Right_Zygoma', 'Right_Gonion'], ['Right_Gonion', 'Menton'], ['Menton', 'Left_Gonion'], ['Left_Gonion', 'Left_Zygoma'],
+    ['Right_Zygoma', 'Left_Zygoma'], ['Right_Alar', 'Left_Alar'],
+    ['Right_Cheilion', 'Labiale_Superius'], ['Labiale_Superius', 'Left_Cheilion'], ['Left_Cheilion', 'Labiale_Inferius'], ['Labiale_Inferius', 'Right_Cheilion'],
+  ];
+
+  const PROFILE_CONN = [
+    ['Profile_Trichion', 'Profile_Glabella'], ['Profile_Glabella', 'Profile_Nasion'], ['Profile_Nasion', 'Profile_Nasal_Tip'],
+    ['Profile_Nasal_Tip', 'Profile_Subnasale'], ['Profile_Subnasale', 'Profile_Labiale_Superius'],
+    ['Profile_Labiale_Superius', 'Profile_Labiale_Inferius'], ['Profile_Labiale_Inferius', 'Profile_Mentolabial_Sulcus'],
+    ['Profile_Mentolabial_Sulcus', 'Profile_Pogonion'], ['Profile_Pogonion', 'Profile_Menton'], ['Profile_Menton', 'Profile_Submental_Point'],
+    ['Profile_Ramus_Top', 'Profile_Gonion'], ['Profile_Gonion', 'Profile_Menton'], ['Profile_Cornea', 'Profile_Infraorbital_Rim'],
+  ];
+
+  const GROUP_COLORS = {
+    Midline: '#00F0FF', Eyes: '#39FF14', Cheekbones: '#FF2BD6', Jaw: '#FFB020', Nose: '#A98BFF', Mouth: '#FF5C7A',
+    Cranial: '#00F0FF', Lips: '#FF5C7A', Chin: '#FFB020', Mandible: '#FFB020', Orbit: '#39FF14', Neck: '#7CE8FF',
+  };
+
+  // Face box: the region of the image the templates (and camera guides) assume the face occupies.
+  function faceBox(view, W, H) {
+    const aspect = view === 'frontal' ? 0.72 : 0.8;
+    let h = H * 0.84, w = h * aspect;
+    if (w > W * 0.95) { w = W * 0.95; h = w / aspect; }
+    return { x: (W - w) / 2, y: (H - h) / 2, w, h };
+  }
+
+  function seed(view, def, W, H, facing) {
+    const b = faceBox(view, W, H);
+    let tx = def.t[0];
+    if (view === 'profile' && facing === 'left') tx = 1 - tx;
+    return { x: b.x + tx * b.w, y: b.y + def.t[1] * b.h };
+  }
+
+  M.landmarks = {
+    FRONTAL, PROFILE, GROUP_COLORS, faceBox, seed,
+    defs: (view) => (view === 'frontal' ? FRONTAL : PROFILE),
+    conns: (view) => (view === 'frontal' ? FRONTAL_CONN : PROFILE_CONN),
+    color: (group) => GROUP_COLORS[group] || '#00F0FF',
+    byId: (view, id) => (view === 'frontal' ? FRONTAL : PROFILE).find((d) => d.id === id),
+  };
+})(window.MOG = window.MOG || {});
+
+</script>
+<script>
+/* js/metrics.js */
+/* Do I Mog or Dog — geometric calculation engine
+ *
+ * Every metric is computed from raw pixel coordinates. Each one gets a band
+ * [failoLow, idealLow, idealHigh, failoHigh]: inside the ideal range → MOG / IDEAL,
+ * between ideal and failo thresholds → AVERAGE, beyond a failo threshold → FAILO / DOGGED.
+ */
+(function (M) {
+  'use strict';
+  const G = M.geo;
+  const INF = Infinity;
+  const DEG = G.DEG;
+
+  const BANDS = {
+    canthalTilt:   { male: [-1, 3, 7, 12], female: [-1, 4, 8, 13] },
+    fwhr:          { male: [1.68, 1.85, 2.05, 2.18], female: [1.62, 1.78, 1.98, 2.12] },
+    midface:       { both: [0.91, 0.98, 1.03, 1.10] },
+    eyeRatio:      { both: [0.88, 0.95, 1.05, 1.12] },
+    bigonial:      { male: [0.75, 0.83, 0.88, 0.95], female: [0.68, 0.75, 0.80, 0.88] },
+    philtrumChin:  { both: [1.6, 2.0, 2.2, 2.8] },
+    mouthNose:     { both: [1.20, 1.35, 1.50, 1.70] },
+    thirds:        { both: [-INF, -INF, 2.0, 4.5], span: 2.0 },
+    palpebral:     { male: [0.18, 0.24, 0.32, 0.40], female: [0.20, 0.28, 0.38, 0.46] },
+    symmetry:      { both: [-INF, -INF, 2.5, 6.0], span: 2.5 },
+    gonial:        { male: [105, 115, 123, 135], female: [108, 120, 128, 138] },
+    ramus:         { male: [0.75, 1.00, INF, INF], female: [0.70, 0.90, INF, INF], span: 0.2 },
+    convexity:     { both: [158, 165, 175, 184] },
+    mpa:           { both: [12, 20, 25, 32] },
+    orbital:       { both: [-1.0, 0, INF, INF], span: 1.5 },
+    nasolabial:    { male: [80, 90, 95, 110], female: [85, 95, 105, 120] },
+    mentolabial:   { both: [100, 120, 130, 142] },
+    cervicomental: { both: [80, 90, 100, 120] },
+  };
+
+  const num = (dp, unit = '', signed = false) => (v) => {
+    if (v == null || !isFinite(v)) return '—';
+    const s = v < 0 ? '−' : signed && v > 0 ? '+' : '';
+    return s + Math.abs(v).toFixed(dp) + unit;
+  };
+
+  // Radar axes: eye, jaw, midface, profile, harmony, dimorphism
+  const META = {
+    canthalTilt: {
+      label: 'Canthal Tilt', view: 'frontal', fmt: num(1, '°', true), weight: 1.4, axes: ['eye', 'dimorphism'],
+      formula: '∠(En→Ex) vs. horizontal, roll-corrected',
+      crit: { test: (v) => v < -1, label: 'Negative Canthal Tilt', rule: '< −1°' },
+    },
+    fwhr: {
+      label: 'FWHR', view: 'frontal', fmt: num(2), weight: 1.2, axes: ['midface', 'dimorphism'],
+      formula: 'Bizygomatic ÷ vertical(G line → Ls line)',
+      crit: { test: (v) => v < 1.68 || v > 2.18, label: 'FWHR Out of Bounds', rule: '< 1.68 or > 2.18' },
+    },
+    midface: {
+      label: 'Midface Ratio', view: 'frontal', fmt: num(3), weight: 1.4, axes: ['midface'],
+      formula: 'IPD ÷ vertical(pupil line → Ls line)',
+      crit: { test: (v) => v < 0.90, label: 'Long Midface', rule: '< 0.90' },
+    },
+    eyeRatio: {
+      label: 'ICD : PFL (Eye Spacing)', view: 'frontal', fmt: num(3), weight: 0.9, axes: ['eye', 'harmony'],
+      formula: 'Intercanthal distance ÷ mean palpebral fissure length',
+    },
+    bigonial: {
+      label: 'Bigonial : Bizygomatic', view: 'frontal', fmt: num(3), weight: 1.1, axes: ['jaw', 'dimorphism'],
+      formula: 'Go–Go width ÷ Zy–Zy width',
+    },
+    philtrumChin: {
+      label: 'Philtrum : Chin', view: 'frontal', fmt: (v) => (isFinite(v) ? '1 : ' + v.toFixed(2) : '—'), weight: 1.0, axes: ['jaw', 'harmony'],
+      formula: '(Sn→Ls) : (Li→Me)',
+      crit: { test: (v) => v < 1.6, label: 'Long Philtrum / Weak Chin', rule: '< 1 : 1.6' },
+    },
+    mouthNose: {
+      label: 'Mouth : Nose Width', view: 'frontal', fmt: num(2), weight: 0.6, axes: ['harmony'],
+      formula: 'Ch–Ch width ÷ Al–Al width',
+    },
+    thirds: {
+      label: 'Vertical Thirds σ', view: 'frontal', fmt: num(1, '%'), weight: 0.8, axes: ['harmony'],
+      formula: 'SD of Tr–G / G–Sn / Sn–Me share of face height',
+    },
+    palpebral: {
+      label: 'Eye Aspect (Hunter Index)', view: 'frontal', fmt: num(3), weight: 0.7, axes: ['eye', 'dimorphism'],
+      formula: 'Lid aperture height ÷ PFL (lower = more hooded)',
+    },
+    symmetry: {
+      label: 'Bilateral Asymmetry', view: 'frontal', fmt: num(1, '%'), weight: 0.9, axes: ['harmony'],
+      formula: 'Mean paired-landmark deviation from midline ÷ bizygomatic',
+    },
+    gonial: {
+      label: 'Gonial Angle', view: 'profile', fmt: num(1, '°'), weight: 1.2, axes: ['jaw', 'dimorphism'],
+      formula: '∠ Ramus_Top – Gonion – Menton',
+      crit: { test: (v) => v > 135, label: 'High-Angle Steep Jaw', rule: '> 135°' },
+    },
+    ramus: {
+      label: 'Ramus : Mandibular Body', view: 'profile', fmt: num(2), weight: 1.0, axes: ['jaw', 'dimorphism'],
+      formula: '|Ra→Go| ÷ |Go→Me|',
+    },
+    convexity: {
+      label: 'Facial Convexity', view: 'profile', fmt: num(1, '°'), weight: 1.4, axes: ['profile', 'jaw'],
+      formula: '∠ Glabella – Subnasale – Pogonion',
+      crit: { test: (v) => v < 155, label: 'Recessed Mandible', rule: '< 155°' },
+    },
+    mpa: {
+      label: 'Mandibular Plane Angle', view: 'profile', fmt: num(1, '°'), weight: 0.9, axes: ['jaw', 'profile'],
+      formula: '∠(Go→Me) vs. Frankfurt horizontal (image level)',
+    },
+    orbital: {
+      label: 'Orbital Vector', view: 'profile', fmt: num(1, '%', true), weight: 1.0, axes: ['eye', 'midface'],
+      formula: 'Infraorbital rim ahead (+) / behind (−) cornea, % N–Me',
+    },
+    nasolabial: {
+      label: 'Nasolabial Angle', view: 'profile', fmt: num(1, '°'), weight: 0.6, axes: ['profile', 'harmony'],
+      formula: '∠ Nasal_Tip – Subnasale – Labiale_Sup',
+    },
+    mentolabial: {
+      label: 'Mentolabial Angle', view: 'profile', fmt: num(1, '°'), weight: 0.6, axes: ['profile', 'jaw'],
+      formula: '∠ Labiale_Inf – Sulcus – Pogonion',
+    },
+    cervicomental: {
+      label: 'Cervicomental Angle', view: 'profile', fmt: num(1, '°'), weight: 0.8, axes: ['profile', 'jaw'],
+      formula: '∠(C→Me) vs. vertical neck line',
+    },
+  };
+
+  const ORDER = {
+    frontal: ['canthalTilt', 'fwhr', 'midface', 'eyeRatio', 'bigonial', 'philtrumChin', 'mouthNose', 'thirds', 'palpebral', 'symmetry'],
+    profile: ['gonial', 'ramus', 'convexity', 'mpa', 'orbital', 'nasolabial', 'mentolabial', 'cervicomental'],
+  };
+
+  function getBand(key, sex) {
+    const b = BANDS[key];
+    const a = b[sex] || b.both;
+    return { fl: a[0], il: a[1], ih: a[2], fh: a[3], span: b.span || 1, sexSpecific: !b.both };
+  }
+
+  // Map a value onto the band → status + z contribution (ideal 1..2, average 1..−1, failo −1..−3).
+  function evaluate(x, b) {
+    if (x == null || !isFinite(x)) return { status: 'na', z: 0 };
+    const { fl, il, ih, fh, span } = b;
+    if (x >= il && x <= ih) {
+      let q;
+      if (isFinite(il) && isFinite(ih)) {
+        const h = (ih - il) / 2;
+        q = h > 0 ? 1 - Math.abs(x - (il + ih) / 2) / h : 1;
+      } else if (isFinite(il)) q = Math.min(1, (x - il) / span);
+      else q = Math.min(1, (ih - x) / span);
+      return { status: 'ideal', z: 1 + q };
+    }
+    const below = x < il;
+    const edge = below ? il : ih;
+    const limit = below ? fl : fh;
+    const tol = isFinite(limit) ? Math.abs(edge - limit) || span : span;
+    const d = Math.abs(x - edge) / tol;
+    if (d <= 1) return { status: 'average', z: 1 - 2 * d, side: below ? 'low' : 'high' };
+    return { status: 'failo', z: Math.max(-3, -1 - 2 * (d - 1)), side: below ? 'low' : 'high' };
+  }
+
+  function targetText(b, fmt) {
+    let ideal;
+    if (isFinite(b.il) && isFinite(b.ih)) ideal = `${fmt(b.il)} – ${fmt(b.ih)}`;
+    else if (isFinite(b.il)) ideal = `≥ ${fmt(b.il)}`;
+    else ideal = `≤ ${fmt(b.ih)}`;
+    const f = [];
+    if (isFinite(b.fl)) f.push(`< ${fmt(b.fl)}`);
+    if (isFinite(b.fh)) f.push(`> ${fmt(b.fh)}`);
+    return { ideal, failo: f.join(' or ') };
+  }
+
+  function build(key, value, sex, detail = '') {
+    const m = META[key];
+    const b = getBand(key, sex);
+    const ev = evaluate(value, b);
+    const hasVal = value != null && isFinite(value);
+    return {
+      key, label: m.label, view: m.view, value: hasVal ? value : null,
+      display: m.fmt(value), detail, formula: m.formula,
+      target: targetText(b, m.fmt), sexSpecific: b.sexSpecific,
+      status: ev.status, z: ev.z, weight: m.weight, axes: m.axes,
+      critical: m.crit ? { label: m.crit.label, rule: m.crit.rule, hit: hasVal && m.crit.test(value) } : null,
+    };
+  }
+
+  const has = (P, ids) => ids.every((id) => P[id]);
+
+  function computeFrontal(P, sex) {
+    const vals = {};
+    const details = {};
+    const info = {};
+
+    // Face frame: u = interpupillary axis (image-right), v = perpendicular (down). Removes head roll.
+    let u = { x: 1, y: 0 };
+    if (has(P, ['Left_Pupil', 'Right_Pupil'])) {
+      u = G.norm(G.sub(P.Left_Pupil, P.Right_Pupil));
+      if (u.x < 0) u = { x: -u.x, y: -u.y };
+    }
+    const v = { x: -u.y, y: u.x };
+    const X = (p) => G.dot(p, u);
+    const Y = (p) => G.dot(p, v);
+    info.roll = Math.atan2(u.y, u.x) * DEG;
+
+    const pfl = (side) => G.dist(P[side + '_Inner_Canthus'], P[side + '_Outer_Canthus']);
+
+    if (has(P, ['Left_Inner_Canthus', 'Left_Outer_Canthus', 'Right_Inner_Canthus', 'Right_Outer_Canthus'])) {
+      const tilt = (inner, outer) => {
+        const d = G.sub(outer, inner);
+        return Math.atan2(-G.dot(d, v), Math.abs(G.dot(d, u))) * DEG;
+      };
+      const l = tilt(P.Left_Inner_Canthus, P.Left_Outer_Canthus);
+      const r = tilt(P.Right_Inner_Canthus, P.Right_Outer_Canthus);
+      vals.canthalTilt = (l + r) / 2;
+      details.canthalTilt = `L ${META.canthalTilt.fmt(l)} · R ${META.canthalTilt.fmt(r)}`;
+
+      const icd = G.dist(P.Left_Inner_Canthus, P.Right_Inner_Canthus);
+      vals.eyeRatio = icd / ((pfl('Left') + pfl('Right')) / 2);
+      details.eyeRatio = vals.eyeRatio < 0.88 ? 'hypotelorism' : vals.eyeRatio > 1.12 ? 'hypertelorism' : 'ICD ≈ eye width';
+    }
+
+    if (has(P, ['Left_Zygoma', 'Right_Zygoma', 'Glabella', 'Labiale_Superius'])) {
+      const bzw = G.dist(P.Left_Zygoma, P.Right_Zygoma);
+      const h = Math.abs(Y(P.Labiale_Superius) - Y(P.Glabella));
+      vals.fwhr = bzw / h;
+      details.fwhr = `${bzw.toFixed(0)} ÷ ${h.toFixed(0)} px`;
+    }
+
+    if (has(P, ['Left_Pupil', 'Right_Pupil', 'Labiale_Superius'])) {
+      const ipd = G.dist(P.Left_Pupil, P.Right_Pupil);
+      const h = Math.abs(Y(P.Labiale_Superius) - Y(G.mid(P.Left_Pupil, P.Right_Pupil)));
+      vals.midface = ipd / h;
+      details.midface = `IPD ${ipd.toFixed(0)} ÷ ${h.toFixed(0)} px`;
+    }
+
+    if (has(P, ['Left_Gonion', 'Right_Gonion', 'Left_Zygoma', 'Right_Zygoma'])) {
+      vals.bigonial = G.dist(P.Left_Gonion, P.Right_Gonion) / G.dist(P.Left_Zygoma, P.Right_Zygoma);
+    }
+
+    if (has(P, ['Subnasale', 'Labiale_Superius', 'Labiale_Inferius', 'Menton'])) {
+      const ph = G.dist(P.Subnasale, P.Labiale_Superius);
+      const ch = G.dist(P.Labiale_Inferius, P.Menton);
+      vals.philtrumChin = ch / ph;
+      details.philtrumChin = `${ph.toFixed(0)} : ${ch.toFixed(0)} px`;
+    }
+
+    if (has(P, ['Left_Cheilion', 'Right_Cheilion', 'Left_Alar', 'Right_Alar'])) {
+      vals.mouthNose = G.dist(P.Left_Cheilion, P.Right_Cheilion) / G.dist(P.Left_Alar, P.Right_Alar);
+    }
+
+    if (has(P, ['Hairline_Trichion', 'Glabella', 'Subnasale', 'Menton'])) {
+      const d = [
+        Y(P.Glabella) - Y(P.Hairline_Trichion),
+        Y(P.Subnasale) - Y(P.Glabella),
+        Y(P.Menton) - Y(P.Subnasale),
+      ].map(Math.abs);
+      const tot = d[0] + d[1] + d[2];
+      const p = d.map((x) => x / tot);
+      const mean = 1 / 3;
+      vals.thirds = Math.sqrt(p.reduce((s, x) => s + (x - mean) ** 2, 0) / 3) * 100;
+      details.thirds = p.map((x) => (x * 100).toFixed(0)).join(' / ') + ' %';
+      info.thirds = p;
+    }
+
+    if (has(P, ['Left_Upper_Eyelid', 'Left_Lower_Eyelid', 'Right_Upper_Eyelid', 'Right_Lower_Eyelid',
+      'Left_Inner_Canthus', 'Left_Outer_Canthus', 'Right_Inner_Canthus', 'Right_Outer_Canthus'])) {
+      const ear = (side) => Math.abs(Y(P[side + '_Lower_Eyelid']) - Y(P[side + '_Upper_Eyelid'])) / pfl(side);
+      const l = ear('Left'), r = ear('Right');
+      vals.palpebral = (l + r) / 2;
+      details.palpebral = `L ${l.toFixed(3)} · R ${r.toFixed(3)}`;
+    }
+
+    const mids = ['Glabella', 'Subnasale', 'Labiale_Superius', 'Labiale_Inferius', 'Menton'].filter((id) => P[id]);
+    const pairs = ['Inner_Canthus', 'Outer_Canthus', 'Pupil', 'Zygoma', 'Gonion', 'Alar', 'Cheilion'];
+    if (mids.length >= 3 && has(P, ['Left_Zygoma', 'Right_Zygoma']) && pairs.every((k) => P['Left_' + k] && P['Right_' + k])) {
+      const midX = mids.reduce((s, id) => s + X(P[id]), 0) / mids.length;
+      const bzw = G.dist(P.Left_Zygoma, P.Right_Zygoma);
+      let total = 0;
+      for (const k of pairs) {
+        const L = P['Left_' + k], R = P['Right_' + k];
+        const horiz = Math.abs((X(L) - midX) + (X(R) - midX));
+        const vert = Math.abs(Y(L) - Y(R));
+        total += (horiz + vert) / 2;
+      }
+      vals.symmetry = (total / pairs.length) / bzw * 100;
+    }
+
+    return { metrics: ORDER.frontal.map((k) => build(k, vals[k], sex, details[k])), info };
+  }
+
+  function computeProfile(P, sex) {
+    const vals = {};
+    const details = {};
+    const info = {};
+    const p = (id) => P['Profile_' + id];
+
+    // Anterior direction: +1 when the face points image-right.
+    let s = 1;
+    if (p('Nasal_Tip') && p('Ramus_Top')) s = Math.sign(p('Nasal_Tip').x - p('Ramus_Top').x) || 1;
+    else if (p('Nasal_Tip') && p('Gonion')) s = Math.sign(p('Nasal_Tip').x - p('Gonion').x) || 1;
+    info.facing = s > 0 ? 'right' : 'left';
+
+    if (p('Ramus_Top') && p('Gonion') && p('Menton')) {
+      vals.gonial = G.angleAt(p('Gonion'), p('Ramus_Top'), p('Menton'));
+      const ramus = G.dist(p('Ramus_Top'), p('Gonion'));
+      const body = G.dist(p('Gonion'), p('Menton'));
+      vals.ramus = ramus / body;
+      details.ramus = `${ramus.toFixed(0)} ÷ ${body.toFixed(0)} px`;
+    }
+
+    if (p('Glabella') && p('Subnasale') && p('Pogonion')) {
+      const g = p('Glabella'), sn = p('Subnasale'), pog = p('Pogonion');
+      let a = G.angleAt(sn, g, pog);
+      // Subnasale behind the G–Pog line → concave (prognathic) profile → reflex angle.
+      const t = (sn.y - g.y) / ((pog.y - g.y) || 1);
+      const lineX = g.x + t * (pog.x - g.x);
+      const concave = (sn.x - lineX) * s < 0;
+      if (concave) a = 360 - a;
+      vals.convexity = a;
+      details.convexity = concave ? 'concave / prognathic' : a < 158 ? 'convex / retruded' : 'orthognathic';
+    }
+
+    if (p('Gonion') && p('Menton')) {
+      const d = G.sub(p('Menton'), p('Gonion'));
+      vals.mpa = Math.atan2(d.y, Math.abs(d.x)) * DEG;
+    }
+
+    if (p('Infraorbital_Rim') && p('Cornea')) {
+      const ref = p('Nasion') && p('Menton') ? G.dist(p('Nasion'), p('Menton')) : null;
+      if (ref) {
+        const dx = (p('Infraorbital_Rim').x - p('Cornea').x) * s;
+        vals.orbital = dx / ref * 100;
+        details.orbital = dx >= 0 ? 'rim anterior to cornea' : 'rim behind cornea';
+      }
+    }
+
+    if (p('Subnasale') && p('Nasal_Tip') && p('Labiale_Superius')) {
+      vals.nasolabial = G.angleAt(p('Subnasale'), p('Nasal_Tip'), p('Labiale_Superius'));
+    }
+
+    if (p('Mentolabial_Sulcus') && p('Labiale_Inferius') && p('Pogonion')) {
+      vals.mentolabial = G.angleAt(p('Mentolabial_Sulcus'), p('Labiale_Inferius'), p('Pogonion'));
+    }
+
+    if (p('Menton') && p('Submental_Point')) {
+      vals.cervicomental = G.angleBetween(G.sub(p('Menton'), p('Submental_Point')), { x: 0, y: 1 });
+    }
+
+    if (p('Ramus_Top') && p('Infraorbital_Rim')) {
+      const d = G.sub(p('Infraorbital_Rim'), p('Ramus_Top'));
+      info.fhProxy = Math.atan2(-d.y, Math.abs(d.x)) * DEG;
+    }
+
+    return { metrics: ORDER.profile.map((k) => build(k, vals[k], sex, details[k])), info };
+  }
+
+  function compute(landmarks, sex) {
+    const f = computeFrontal(landmarks.frontal || {}, sex);
+    const p = computeProfile(landmarks.profile || {}, sex);
+    const warnings = [];
+    if (Math.abs(f.info.roll) > 3) {
+      warnings.push(`Head roll of ${f.info.roll.toFixed(1)}° detected in frontal. Metrics are roll-corrected via the interpupillary axis, but re-shoot level for accuracy.`);
+    }
+    return { frontal: f.metrics, profile: p.metrics, info: { ...f.info, ...p.info }, warnings, sex };
+  }
+
+  M.metrics = { compute, evaluate, getBand, META, BANDS, ORDER };
+})(window.MOG = window.MOG || {});
+
+</script>
+<script>
+/* js/scoring.js */
+/* Do I Mog or Dog — blackpill scoring: Gaussian placement + hard failo ceilings */
+(function (M) {
+  'use strict';
+  const G = M.geo;
+
+  const TIERS = [
+    { min: 7.5, name: 'GIGACHAD / CHAD', badge: 'ULTIMATE MOG', color: '#00E58B' },
+    { min: 6.5, name: 'CHADLITE', badge: 'MOGGER', color: '#39FF14' },
+    { min: 5.75, name: 'HTN · High-Tier Normie', badge: 'SLIGHT MOG', color: '#14D9C4' },
+    { min: 4.75, name: 'MTN · Mid-Tier Normie', badge: 'NEUTRAL / MID', color: '#C9A64E' },
+    { min: 4.0, name: 'LTN · Low-Tier Normie', badge: 'SLIGHT DOG', color: '#FF8A1F' },
+    { min: 3.0, name: 'SUB-5 · Sub-Normie', badge: 'GETTING MOGGED', color: '#FF2A2A' },
+    { min: -Infinity, name: 'TRUECEL · Skeletal Failo', badge: 'BRUTAL DOGGED', color: '#C0122F' },
+  ];
+
+  const AXES = [
+    { key: 'eye', label: 'Eye Area' },
+    { key: 'jaw', label: 'Lower Third / Jaw' },
+    { key: 'midface', label: 'Midface Compactness' },
+    { key: 'profile', label: 'Profile Projection' },
+    { key: 'harmony', label: 'Facial Harmony' },
+    { key: 'dimorphism', label: 'Dimorphism' },
+  ];
+
+  const MEAN = 5.0;
+  const SIGMA = 1.0;
+
+  const tierFor = (score) => TIERS.find((t) => score >= t.min);
+
+  function weightedZ(list) {
+    let s = 0, w = 0;
+    for (const m of list) { s += m.z * m.weight; w += m.weight; }
+    return w ? s / w : 0;
+  }
+
+  // Composite z (ideal ≈ 1..2, average ≈ −1..1) → standardized deviation from the population mean.
+  // Calibrated so a mixed "everything mid" face sits at 5.0 and an all-ideal face lands ~7–8.
+  const toScore = (zbar) => G.clamp(MEAN + SIGMA * 2.0 * (zbar - 0.5), 1, 10);
+
+  function score(analysis) {
+    const all = analysis.frontal.concat(analysis.profile).filter((m) => m.status !== 'na');
+    const base = toScore(weightedZ(all));
+    const crits = all.filter((m) => m.critical && m.critical.hit);
+
+    let cap = null, capLabel = '';
+    if (crits.length === 1) { cap = 5.40; capLabel = 'HTN Max'; }
+    else if (crits.length === 2) { cap = 4.40; capLabel = 'LTN Max'; }
+    else if (crits.length >= 3) { cap = Math.max(1, 3.99 - 0.35 * (crits.length - 3)); capLabel = 'Truecel / Sub-Normie'; }
+
+    let final = cap != null ? Math.min(base, cap) : base;
+    final = Math.round(G.clamp(final, 1, 10) * 100) / 100;
+
+    const sigma = (final - MEAN) / SIGMA;
+    const percentile = G.normCdf(sigma) * 100;
+
+    const axes = AXES.map((a) => {
+      const ms = all.filter((m) => m.axes.includes(a.key));
+      const z = weightedZ(ms);
+      return { ...a, value: ms.length ? G.clamp(5 + 2.5 * z, 0, 10) : 0, count: ms.length };
+    });
+
+    const sorted = all.slice().sort((a, b) => b.z - a.z);
+    return {
+      base: Math.round(base * 100) / 100,
+      final, cap, capLabel, crits, sigma, percentile,
+      tier: tierFor(final),
+      axes,
+      frontalScore: toScore(weightedZ(analysis.frontal.filter((m) => m.status !== 'na'))),
+      profileScore: toScore(weightedZ(analysis.profile.filter((m) => m.status !== 'na'))),
+      counts: {
+        ideal: all.filter((m) => m.status === 'ideal').length,
+        average: all.filter((m) => m.status === 'average').length,
+        failo: all.filter((m) => m.status === 'failo').length,
+      },
+      strengths: sorted.filter((m) => m.status === 'ideal').slice(0, 4),
+      weaknesses: sorted.filter((m) => m.status !== 'ideal').reverse().slice(0, 4),
+    };
+  }
+
+  M.scoring = { score, TIERS, AXES, tierFor, MEAN, SIGMA };
+})(window.MOG = window.MOG || {});
+
+</script>
+<script>
+/* js/capture.js */
+/* Do I Mog or Dog — photo upload, normalization, camera capture and alignment guides */
+(function (M) {
+  'use strict';
+  const MAX_DIM = 2000;
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Could not decode image'));
+      img.src = src;
+    });
+  }
+
+  function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+
+  // Downscale to MAX_DIM and re-encode (browsers apply EXIF orientation when drawing).
+  async function normalize(src) {
+    const img = await loadImage(src);
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const k = Math.min(1, MAX_DIM / Math.max(w, h));
+    const c = document.createElement('canvas');
+    c.width = Math.round(w * k);
+    c.height = Math.round(h * k);
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return { src: c.toDataURL('image/jpeg', 0.92), w: c.width, h: c.height };
+  }
+
+  async function fromFile(file) {
+    if (!file || !/^image\//.test(file.type)) throw new Error('Not an image file');
+    return normalize(await fileToDataURL(file));
+  }
+
+  // ---------- Alignment guide overlay (viewBox 300×400, eye line at y=166) ----------
+  const FRONTAL_SIL = 'M150 40 C215 40 250 85 250 150 C252 190 248 215 240 240 C228 280 195 312 150 318 C105 312 72 280 60 240 C52 215 48 190 50 150 C50 85 85 40 150 40 Z ' +
+    'M50 160 C38 156 36 190 52 204 M250 160 C262 156 264 190 248 204 ' +
+    'M112 300 C112 330 108 350 100 362 C70 372 34 380 6 400 M188 300 C188 330 192 350 200 362 C230 372 266 380 294 400';
+  const PROFILE_SIL = 'M95 400 C95 360 90 330 80 300 C60 260 52 200 58 150 C66 85 110 45 165 45 C200 47 222 70 228 100 ' +
+    'C232 120 233 135 230 148 C228 155 226 160 230 170 L255 215 C258 222 252 228 240 228 C242 238 244 245 240 252 ' +
+    'C236 256 238 262 240 268 C236 276 230 280 232 288 C236 298 234 310 225 316 C205 325 180 325 165 330 C160 350 158 375 160 400 ' +
+    'M112 158 C100 150 98 196 114 202';
+
+  function guideSVG(view, facing) {
+    const grid = [100, 200].map((x) => `<line x1="${x}" y1="0" x2="${x}" y2="400"/>`).join('') +
+      [133, 266].map((y) => `<line x1="-600" y1="${y}" x2="900" y2="${y}"/>`).join('');
+    const flip = view === 'profile' && facing === 'left' ? ' transform="translate(300 0) scale(-1 1)"' : '';
+    const fh = view === 'profile'
+      ? `<line class="g-fh" x1="112" y1="170" x2="226" y2="168"/><text class="a" x="${facing === 'left' ? 40 : 232}" y="182">FH 0°</text>`
+      : '';
+    return `<svg class="guide-svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <g class="g-grid">${grid}</g>
+      <line class="g-center" x1="150" y1="-400" x2="150" y2="800"/>
+      <line class="g-eye" x1="-600" y1="166" x2="900" y2="166"/>
+      <text x="6" y="161">EYE LEVEL</text>
+      <text class="c" x="154" y="14">CENTERLINE</text>
+      <g${flip}><path class="g-sil" d="${view === 'frontal' ? FRONTAL_SIL : PROFILE_SIL}"/></g>
+      ${fh}
+    </svg>`;
+  }
+
+  // ---------- Camera ----------
+  const cam = {
+    stream: null, facingMode: 'user', timer: 0, view: 'frontal', guideFacing: 'right', onCapture: null, busy: false,
+  };
+  const el = (id) => document.getElementById(id);
+
+  async function startStream() {
+    stopStream();
+    const err = el('cam-error');
+    err.hidden = true;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      err.textContent = 'Camera API unavailable here. Serve the app over https or localhost, or use Upload.';
+      err.hidden = false;
+      return;
+    }
+    try {
+      cam.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: cam.facingMode, width: { ideal: 1920 }, height: { ideal: 1440 } },
+        audio: false,
+      });
+    } catch (e) {
+      err.textContent = `Camera unavailable (${e.name || 'error'}). Grant camera permission or use Upload instead.`;
+      err.hidden = false;
+      return;
+    }
+    const video = el('cam-video');
+    video.srcObject = cam.stream;
+    el('cam-view').classList.toggle('mirror', cam.facingMode === 'user');
+    video.onloadedmetadata = () => {
+      if (video.videoWidth) el('cam-view').style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+    };
+    // Optical zoom, where the device exposes it.
+    const track = cam.stream.getVideoTracks()[0];
+    const caps = track && track.getCapabilities ? track.getCapabilities() : {};
+    const wrap = el('cam-zoom-wrap');
+    if (caps.zoom) {
+      const z = el('cam-zoom');
+      z.min = caps.zoom.min; z.max = caps.zoom.max; z.step = caps.zoom.step || 0.1;
+      const target = Math.min(caps.zoom.max, Math.max(caps.zoom.min, 2));
+      z.value = target;
+      applyZoom(target);
+      wrap.hidden = false;
+    } else wrap.hidden = true;
+  }
+
+  function applyZoom(v) {
+    const track = cam.stream && cam.stream.getVideoTracks()[0];
+    if (!track) return;
+    track.applyConstraints({ advanced: [{ zoom: Number(v) }] }).catch(() => {});
+    el('cam-zoom-val').textContent = Number(v).toFixed(1) + '×';
+  }
+
+  function stopStream() {
+    if (cam.stream) cam.stream.getTracks().forEach((t) => t.stop());
+    cam.stream = null;
+  }
+
+  function open(view, guideFacing, onCapture) {
+    cam.view = view;
+    cam.guideFacing = guideFacing;
+    cam.onCapture = onCapture;
+    el('cam-title').textContent = view === 'frontal' ? 'Frontal View' : 'Profile View (90°)';
+    el('cam-overlay').innerHTML = guideSVG(view, guideFacing);
+    el('cam-countdown').textContent = '';
+    el('camera-modal').hidden = false;
+    startStream();
+  }
+
+  function close() {
+    cam.busy = false;
+    stopStream();
+    el('camera-modal').hidden = true;
+  }
+
+  async function shoot() {
+    const video = el('cam-video');
+    if (cam.busy || !cam.stream || !video.videoWidth) return;
+    cam.busy = true;
+    const cd = el('cam-countdown');
+    for (let t = cam.timer; t > 0; t--) {
+      cd.textContent = t;
+      await new Promise((r) => setTimeout(r, 1000));
+      if (!cam.busy) return;
+    }
+    cd.textContent = '';
+    const c = document.createElement('canvas');
+    c.width = video.videoWidth;
+    c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    const data = await normalize(c.toDataURL('image/jpeg', 0.95));
+    const cb = cam.onCapture;
+    close();
+    if (cb) cb(data);
+  }
+
+  function initCamera() {
+    el('cam-shoot').addEventListener('click', shoot);
+    el('cam-flip').addEventListener('click', () => {
+      cam.facingMode = cam.facingMode === 'user' ? 'environment' : 'user';
+      startStream();
+    });
+    el('cam-zoom').addEventListener('input', (e) => applyZoom(e.target.value));
+    el('cam-timer').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      cam.timer = Number(b.dataset.t);
+      el('cam-timer').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+    });
+    el('camera-modal').querySelector('[data-close]').addEventListener('click', close);
+  }
+
+  M.capture = { loadImage, normalize, fromFile, guideSVG, openCamera: open, closeCamera: close, initCamera };
+})(window.MOG = window.MOG || {});
+
+</script>
+<script>
+/* js/editor.js */
+/* Do I Mog or Dog — interactive landmark editor with 2.5× sub-pixel loupe */
+(function (M) {
+  'use strict';
+  const G = M.geo;
+  const L = M.landmarks;
+  const LOUPE_ZOOM = 2.5;
+
+  class LandmarkEditor {
+    constructor(opts) {
+      this.stage = opts.stage;
+      this.canvas = opts.canvas;
+      this.loupe = opts.loupe;
+      this.listEl = opts.list;
+      this.currentEl = opts.current;
+      this.hud = opts.hud;
+      this.onChange = opts.onChange || (() => {});
+      this.getFacing = opts.getFacing || (() => 'right');
+      this.ctx = this.canvas.getContext('2d');
+      this.lctx = this.loupe.getContext('2d');
+
+      this.view = null; this.img = null; this.defs = []; this.points = {}; this.conns = [];
+      this.selected = null; this.hoverId = null; this.mode = 'place';
+      this.scale = 1; this.fitScale = 1; this.zoom = 1; this.ox = 0; this.oy = 0;
+      this.cw = 0; this.ch = 0; this.dpr = 1;
+      this.action = null; this.pointers = new Map(); this.spaceDown = false;
+
+      this._bind();
+      new ResizeObserver(() => this.resize()).observe(this.stage);
+    }
+
+    // ---------- loading & view transform ----------
+    load({ view, img, defs, points, conns }) {
+      this.view = view; this.img = img; this.defs = defs; this.points = points; this.conns = conns;
+      this.selected = this.nextUnplaced() || defs[0].id;
+      this.action = null;
+      this.hideLoupe();
+      this.resize(true);
+      this.renderPanel();
+    }
+
+    get W() { return this.img ? this.img.naturalWidth : 1; }
+    get H() { return this.img ? this.img.naturalHeight : 1; }
+
+    resize(refit) {
+      const r = this.stage.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      this.dpr = window.devicePixelRatio || 1;
+      this.cw = r.width; this.ch = r.height;
+      this.canvas.width = Math.round(r.width * this.dpr);
+      this.canvas.height = Math.round(r.height * this.dpr);
+      if (this.img) {
+        this.fitScale = Math.min(this.cw / this.W, this.ch / this.H) * 0.96;
+        if (refit || this.zoom <= 1.001) this.fit();
+        else { this.scale = this.fitScale * this.zoom; this.clampPan(); }
+      }
+      this.render();
+    }
+
+    fit() {
+      this.zoom = 1;
+      this.scale = this.fitScale;
+      this.ox = (this.cw - this.W * this.scale) / 2;
+      this.oy = (this.ch - this.H * this.scale) / 2;
+      this.render();
+    }
+
+    zoomAt(sp, factor) {
+      const ns = G.clamp(this.scale * factor, this.fitScale * 0.8, this.fitScale * 16);
+      this.ox = sp.x - (sp.x - this.ox) * (ns / this.scale);
+      this.oy = sp.y - (sp.y - this.oy) * (ns / this.scale);
+      this.scale = ns;
+      this.zoom = ns / this.fitScale;
+      this.clampPan();
+      this.render();
+    }
+
+    clampPan() {
+      const w = this.W * this.scale, h = this.H * this.scale, m = 60;
+      this.ox = w <= this.cw ? (this.cw - w) / 2 : G.clamp(this.ox, this.cw - w - m, m);
+      this.oy = h <= this.ch ? (this.ch - h) / 2 : G.clamp(this.oy, this.ch - h - m, m);
+    }
+
+    toImage(sp) { return { x: (sp.x - this.ox) / this.scale, y: (sp.y - this.oy) / this.scale }; }
+    toScreen(p) { return { x: p.x * this.scale + this.ox, y: p.y * this.scale + this.oy }; }
+    inImage(p) { return p.x >= 0 && p.y >= 0 && p.x <= this.W && p.y <= this.H; }
+    clampImg(p) { return { x: G.clamp(p.x, 0, this.W), y: G.clamp(p.y, 0, this.H) }; }
+
+    pos(e) {
+      const r = this.canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+
+    hitTest(sp, touch) {
+      const radius = touch ? 24 : 13;
+      let best = null, bestD = radius;
+      for (const d of this.defs) {
+        const p = this.points[d.id];
+        if (!p) continue;
+        const dd = G.dist(this.toScreen(p), sp) - (d.id === this.selected ? 2 : 0);
+        if (dd <= bestD) { best = d.id; bestD = dd; }
+      }
+      return best;
+    }
+
+    // ---------- selection & mutation ----------
+    nextUnplaced(afterId) {
+      const n = this.defs.length;
+      const start = afterId ? this.defs.findIndex((d) => d.id === afterId) + 1 : 0;
+      for (let i = 0; i < n; i++) {
+        const d = this.defs[(start + i) % n];
+        if (!this.points[d.id]) return d.id;
+      }
+      return null;
+    }
+
+    step(dir) {
+      const i = this.defs.findIndex((d) => d.id === this.selected);
+      const n = this.defs.length;
+      this.select(this.defs[(i + dir + n) % n].id);
+    }
+
+    select(id) {
+      this.selected = id;
+      this.render();
+      this.renderPanel();
+      const row = this.listEl.querySelector(`[data-id="${id}"]`);
+      if (row) row.scrollIntoView({ block: 'nearest' });
+    }
+
+    clearPoint(id = this.selected) {
+      if (!this.points[id]) return;
+      delete this.points[id];
+      this.selected = id;
+      this.commit();
+    }
+
+    clearAll() {
+      for (const k of Object.keys(this.points)) delete this.points[k];
+      this.selected = this.defs[0].id;
+      this.commit();
+    }
+
+    seedTemplate() {
+      const facing = this.getFacing();
+      for (const d of this.defs) {
+        if (!this.points[d.id]) this.points[d.id] = L.seed(this.view, d, this.W, this.H, facing);
+      }
+      this.commit();
+    }
+
+    nudge(dx, dy) {
+      const p = this.points[this.selected];
+      if (!p) return;
+      this.points[this.selected] = this.clampImg({ x: p.x + dx, y: p.y + dy });
+      this.commit(false);
+      const sp = this.toScreen(this.points[this.selected]);
+      this.showLoupe(this.points[this.selected], sp, false);
+    }
+
+    commit(full = true) {
+      this.onChange(this.view);
+      this.render();
+      if (full) this.renderPanel(); else this.renderCurrent();
+    }
+
+    // ---------- input ----------
+    _bind() {
+      const c = this.canvas;
+      c.addEventListener('pointerdown', (e) => this._down(e));
+      c.addEventListener('pointermove', (e) => this._move(e));
+      c.addEventListener('pointerup', (e) => this._up(e));
+      c.addEventListener('pointercancel', (e) => this._up(e));
+      c.addEventListener('pointerleave', (e) => {
+        if (!this.action && e.pointerType === 'mouse') { this.hideLoupe(); this.hoverId = null; this.render(); }
+      });
+      c.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        this.zoomAt(this.pos(e), Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)));
+      }, { passive: false });
+      c.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    _startPan(sp) {
+      this.action = { type: 'pan', s: sp, ox0: this.ox, oy0: this.oy };
+      this.canvas.style.cursor = 'grabbing';
+      this.hideLoupe();
+    }
+
+    _down(e) {
+      if (!this.img) return;
+      e.preventDefault();
+      this.canvas.setPointerCapture(e.pointerId);
+      const sp = this.pos(e);
+      this.pointers.set(e.pointerId, sp);
+
+      if (this.pointers.size === 2) {
+        const [a, b] = [...this.pointers.values()];
+        if (this.action && this.action.type === 'drag') this.onChange(this.view);
+        this.action = { type: 'pinch', d0: G.dist(a, b) || 1, m0: G.mid(a, b), s0: this.scale, ox0: this.ox, oy0: this.oy };
+        this.hideLoupe();
+        return;
+      }
+      if (this.pointers.size > 2) return;
+
+      const touch = e.pointerType !== 'mouse';
+      const ip = this.toImage(sp);
+      if (e.button === 1 || e.button === 2 || this.mode === 'pan' || this.spaceDown) { this._startPan(sp); return; }
+
+      const hit = this.hitTest(sp, touch);
+      if (hit) {
+        if (hit !== this.selected) this.select(hit);
+        const p = this.points[hit];
+        this.action = { type: 'drag', id: hit, off: { x: p.x - ip.x, y: p.y - ip.y }, isNew: false, touch };
+      } else if (this.selected && !this.points[this.selected] && this.inImage(ip)) {
+        this.points[this.selected] = this.clampImg(ip);
+        this.action = { type: 'drag', id: this.selected, off: { x: 0, y: 0 }, isNew: true, touch };
+        this.renderCurrent();
+      } else {
+        this._startPan(sp);
+        return;
+      }
+      this.render();
+      this.showLoupe(this.points[this.action.id], sp, touch);
+    }
+
+    _move(e) {
+      const sp = this.pos(e);
+      if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, sp);
+      const a = this.action;
+
+      if (a && a.type === 'pinch') {
+        if (this.pointers.size < 2) return;
+        const [p1, p2] = [...this.pointers.values()];
+        const m = G.mid(p1, p2);
+        const ns = G.clamp(a.s0 * G.dist(p1, p2) / a.d0, this.fitScale * 0.8, this.fitScale * 16);
+        const ix = (a.m0.x - a.ox0) / a.s0, iy = (a.m0.y - a.oy0) / a.s0;
+        this.scale = ns; this.zoom = ns / this.fitScale;
+        this.ox = m.x - ix * ns; this.oy = m.y - iy * ns;
+        this.clampPan(); this.render();
+        return;
+      }
+      if (a && a.type === 'drag') {
+        const ip = this.toImage(sp);
+        this.points[a.id] = this.clampImg({ x: ip.x + a.off.x, y: ip.y + a.off.y });
+        this.render();
+        this.renderCurrent();
+        this.showLoupe(this.points[a.id], sp, a.touch);
+        return;
+      }
+      if (a && a.type === 'pan') {
+        this.ox = a.ox0 + sp.x - a.s.x;
+        this.oy = a.oy0 + sp.y - a.s.y;
+        this.clampPan(); this.render();
+        return;
+      }
+      if (e.pointerType !== 'mouse' || !this.img) return;
+
+      const hit = this.hitTest(sp, false);
+      if (hit !== this.hoverId) { this.hoverId = hit; this.render(); }
+      const ip = this.toImage(sp);
+      const placing = this.mode === 'place' && !this.spaceDown && this.selected && !this.points[this.selected] && this.inImage(ip);
+      this.canvas.style.cursor = this.mode === 'pan' || this.spaceDown ? 'grab' : hit ? 'move' : placing ? 'crosshair' : 'default';
+      if (hit) this.showLoupe(this.points[hit], sp, false, hit);
+      else if (placing) this.showLoupe(ip, sp, false);
+      else this.hideLoupe();
+    }
+
+    _up(e) {
+      this.pointers.delete(e.pointerId);
+      const a = this.action;
+      if (!a) return;
+      if (a.type === 'pinch') {
+        if (this.pointers.size === 0) this.action = null;
+        return;
+      }
+      this.action = null;
+      this.canvas.style.cursor = '';
+      if (a.type === 'drag') {
+        this.onChange(this.view);
+        if (a.isNew) {
+          const next = this.nextUnplaced(a.id);
+          if (next) this.selected = next;
+        }
+        this.renderPanel();
+      }
+      if (e.pointerType !== 'mouse' || a.type === 'drag') this.hideLoupe();
+      this.render();
+    }
+
+    handleKey(e) {
+      if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+      if (e.type === 'keyup') {
+        if (e.code === 'Space') { this.spaceDown = false; this.canvas.style.cursor = ''; }
+        return;
+      }
+      const step = e.altKey ? 0.25 : e.shiftKey ? 10 : 1;
+      const k = e.key;
+      if (k === 'ArrowLeft') this.nudge(-step, 0);
+      else if (k === 'ArrowRight') this.nudge(step, 0);
+      else if (k === 'ArrowUp') this.nudge(0, -step);
+      else if (k === 'ArrowDown') this.nudge(0, step);
+      else if (k === ']' || k === 'n') this.step(1);
+      else if (k === '[' || k === 'p') this.step(-1);
+      else if (k === 'Delete' || k === 'Backspace') this.clearPoint();
+      else if (k === '+' || k === '=') this.zoomAt({ x: this.cw / 2, y: this.ch / 2 }, 1.25);
+      else if (k === '-' || k === '_') this.zoomAt({ x: this.cw / 2, y: this.ch / 2 }, 0.8);
+      else if (k === '0') this.fit();
+      else if (e.code === 'Space') { this.spaceDown = true; this.canvas.style.cursor = 'grab'; }
+      else return;
+      e.preventDefault();
+    }
+
+    setMode(mode) { this.mode = mode; this.hideLoupe(); }
+
+    // ---------- rendering ----------
+    render() {
+      const { ctx, dpr, cw, ch } = this;
+      if (!cw) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      if (!this.img) {
+        ctx.fillStyle = '#5c5c6b';
+        ctx.font = '500 13px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('No photo loaded for this view', cw / 2, ch / 2);
+        return;
+      }
+      ctx.save();
+      ctx.translate(this.ox, this.oy);
+      ctx.scale(this.scale, this.scale);
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(this.img, 0, 0);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(0,240,255,.25)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(this.ox - 0.5, this.oy - 0.5, this.W * this.scale + 1, this.H * this.scale + 1);
+
+      // guide connections
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'rgba(0,240,255,.55)';
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      for (const [a, b] of this.conns) {
+        const p = this.points[a], q = this.points[b];
+        if (!p || !q) continue;
+        const s1 = this.toScreen(p), s2 = this.toScreen(q);
+        ctx.moveTo(s1.x, s1.y); ctx.lineTo(s2.x, s2.y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // nodes (selected drawn last)
+      const order = this.defs.filter((d) => d.id !== this.selected);
+      const sel = this.defs.find((d) => d.id === this.selected);
+      if (sel) order.push(sel);
+      for (const d of order) {
+        const p = this.points[d.id];
+        if (p) this._node(ctx, this.toScreen(p), d, d.id === this.selected, d.id === this.hoverId);
+      }
+
+      const placed = this.defs.filter((d) => this.points[d.id]).length;
+      this.hud.textContent = `${this.view.toUpperCase()} · ${placed}/${this.defs.length} nodes · ${(this.scale * 100).toFixed(0)}% · ${this.W}×${this.H}px`;
+    }
+
+    _node(ctx, s, d, sel, hov) {
+      const col = L.color(d.group);
+      const r = sel ? 8 : hov ? 7 : 5.5;
+      ctx.save();
+      if (sel) { ctx.shadowColor = col; ctx.shadowBlur = 14; }
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(5,5,8,.35)';
+      ctx.fill();
+      ctx.lineWidth = sel ? 2 : 1.5;
+      ctx.strokeStyle = col;
+      ctx.stroke();
+      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 1.6, 0, Math.PI * 2);
+      ctx.fillStyle = col;
+      ctx.fill();
+      if (sel) {
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          ctx.moveTo(s.x + dx * (r + 3), s.y + dy * (r + 3));
+          ctx.lineTo(s.x + dx * (r + 9), s.y + dy * (r + 9));
+        }
+        ctx.stroke();
+      }
+      if (sel || hov) {
+        ctx.font = '600 11px "JetBrains Mono", monospace';
+        const label = d.abbr;
+        const w = ctx.measureText(label).width + 10;
+        const lx = s.x + r + 8, ly = s.y - r - 20;
+        ctx.fillStyle = 'rgba(10,10,12,.88)';
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(lx, ly, w, 18, 5) : ctx.rect(lx, ly, w, 18);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = col;
+        ctx.textAlign = 'left';
+        ctx.fillText(label, lx + 5, ly + 13);
+      }
+    }
+
+    showLoupe(c, sp, touch, idOverride) {
+      if (!this.img || !c) return;
+      const size = touch ? 150 : 170;
+      const dpr = this.dpr;
+      const L2 = this.loupe;
+      if (L2.width !== Math.round(size * dpr)) {
+        L2.width = Math.round(size * dpr);
+        L2.height = Math.round(size * dpr);
+        L2.style.width = size + 'px';
+        L2.style.height = size + 'px';
+      }
+      let lx = sp.x + 26, ly = sp.y - size - 26;
+      if (touch) { lx = sp.x - size / 2; ly = sp.y - size - 64; }
+      if (lx + size > this.cw - 6) lx = touch ? this.cw - size - 6 : sp.x - size - 26;
+      if (lx < 6) lx = 6;
+      if (ly < 6) ly = touch ? sp.y + 64 : sp.y + 26;
+      L2.style.transform = `translate(${lx}px, ${ly}px)`;
+      L2.classList.add('on');
+
+      const ctx = this.lctx;
+      const mag = this.scale * LOUPE_ZOOM;
+      const half = size / 2;
+      const activeId = idOverride || (this.action && this.action.id) || this.selected;
+      const def = this.defs.find((d) => d.id === activeId);
+      const col = def ? L.color(def.group) : '#00F0FF';
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(half, half, half - 1, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = '#050507';
+      ctx.fillRect(0, 0, size, size);
+      ctx.save();
+      ctx.translate(half, half);
+      ctx.scale(mag, mag);
+      ctx.translate(-c.x, -c.y);
+      ctx.imageSmoothingEnabled = mag < 6;
+      ctx.drawImage(this.img, 0, 0);
+      ctx.restore();
+
+      // neighbouring nodes
+      for (const d of this.defs) {
+        const p = this.points[d.id];
+        if (!p || d.id === activeId) continue;
+        const x = (p.x - c.x) * mag + half, y = (p.y - c.y) * mag + half;
+        if (x < -10 || y < -10 || x > size + 10 || y > size + 10) continue;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.strokeStyle = L.color(d.group);
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
+
+      // crosshair
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, half); ctx.lineTo(half - 7, half);
+      ctx.moveTo(half + 7, half); ctx.lineTo(size, half);
+      ctx.moveTo(half, 0); ctx.lineTo(half, half - 7);
+      ctx.moveTo(half, half + 7); ctx.lineTo(half, size);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(half, half, 1.3, 0, Math.PI * 2);
+      ctx.fillStyle = col;
+      ctx.fill();
+
+      // readout
+      ctx.fillStyle = 'rgba(5,5,8,.82)';
+      ctx.fillRect(0, size - 30, size, 30);
+      ctx.fillStyle = '#E9E9F1';
+      ctx.font = '600 10px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${c.x.toFixed(2)}, ${c.y.toFixed(2)}`, half, size - 13);
+      ctx.fillStyle = col;
+      ctx.fillText(`${def ? def.abbr : ''} · ${LOUPE_ZOOM}×`, half, 18);
+      ctx.restore();
+    }
+
+    hideLoupe() { this.loupe.classList.remove('on'); }
+
+    // ---------- side panel ----------
+    renderPanel() {
+      const groups = [];
+      for (const d of this.defs) {
+        let g = groups.find((x) => x.name === d.group);
+        if (!g) groups.push(g = { name: d.group, items: [] });
+        g.items.push(d);
+      }
+      this.listEl.innerHTML = groups.map((g) => `
+        <div class="lm-group-h">${g.name}</div>
+        ${g.items.map((d) => `
+          <button class="lm-row${this.points[d.id] ? ' placed' : ''}${d.id === this.selected ? ' sel' : ''}" data-id="${d.id}" style="--c:${L.color(d.group)}">
+            <span class="dot"></span><span class="ab">${d.abbr}</span><span class="nm">${d.name}</span>${d.extra ? '<span class="extra" title="Extra node required by the mentolabial formula">+REQ</span>' : ''}
+          </button>`).join('')}`).join('');
+      this.renderCurrent();
+    }
+
+    renderCurrent() {
+      const i = this.defs.findIndex((d) => d.id === this.selected);
+      const d = this.defs[i];
+      if (!d) { this.currentEl.innerHTML = ''; return; }
+      const p = this.points[d.id];
+      const placed = this.defs.filter((x) => this.points[x.id]).length;
+      this.currentEl.innerHTML = `
+        <div class="cur-idx">NODE ${String(i + 1).padStart(2, '0')} / ${this.defs.length} · ${placed} PLACED</div>
+        <div class="cur-name" style="color:${L.color(d.group)}"><i></i><span style="color:var(--text)">${d.name}</span></div>
+        <div class="cur-id">${d.id}</div>
+        <div class="cur-desc">${d.desc}</div>
+        <div class="cur-coord${p ? '' : ' pending'}">${p ? `x ${p.x.toFixed(2)} · y ${p.y.toFixed(2)} px` : '▸ Click the photo to place this node'}</div>
+        <div class="cur-nav">
+          <button class="btn ghost" data-act="prev">← Prev</button>
+          <button class="btn ghost danger" data-act="clear" ${p ? '' : 'disabled'}>Re-place</button>
+          <button class="btn ghost" data-act="next">Next →</button>
+        </div>`;
+    }
+
+    bindPanel() {
+      this.listEl.addEventListener('click', (e) => {
+        const row = e.target.closest('.lm-row');
+        if (row) this.select(row.dataset.id);
+      });
+      this.currentEl.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-act]');
+        if (!b) return;
+        if (b.dataset.act === 'prev') this.step(-1);
+        else if (b.dataset.act === 'next') this.step(1);
+        else if (b.dataset.act === 'clear') this.clearPoint();
+      });
+    }
+  }
+
+  M.LandmarkEditor = LandmarkEditor;
+})(window.MOG = window.MOG || {});
+
+</script>
+<script>
+/* js/results.js */
+/* Do I Mog or Dog — scan sequence, verdict reveal, radar, diagnostic matrix */
+(function (M) {
+  'use strict';
+  const G = M.geo;
+  const L = M.landmarks;
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ---------- shared canvas helpers ----------
+  function sizeCanvas(canvas) {
+    const r = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(r.width * dpr));
+    canvas.height = Math.max(1, Math.round(r.height * dpr));
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, w: r.width, h: r.height };
+  }
+
+  // Fit the image (or, if zoomTo, the landmark bounding box) into w×h.
+  function fitTransform(img, w, h, pts, pad = 0.12) {
+    let bx = 0, by = 0, bw = img.naturalWidth, bh = img.naturalHeight;
+    if (pts && pts.length) {
+      const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+      const pw = (maxX - minX) * pad + 20, ph = (maxY - minY) * pad + 20;
+      bx = minX - pw; by = minY - ph; bw = maxX - minX + pw * 2; bh = maxY - minY + ph * 2;
+    }
+    const s = Math.min(w / bw, h / bh);
+    return { s, ox: (w - bw * s) / 2 - bx * s, oy: (h - bh * s) / 2 - by * s };
+  }
+  const T = (t, p) => ({ x: p.x * t.s + t.ox, y: p.y * t.s + t.oy });
+
+  function label(ctx, text, x, y, color) {
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    const w = ctx.measureText(text).width + 10;
+    const cw = ctx.canvas.width / (window.devicePixelRatio || 1);
+    const ch = ctx.canvas.height / (window.devicePixelRatio || 1);
+    x = G.clamp(x, 2, cw - w - 2);
+    y = G.clamp(y, 14, ch - 4);
+    ctx.fillStyle = 'rgba(6,6,9,.88)';
+    ctx.fillRect(x, y - 12, w, 16);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y - 11.5, w - 1, 15);
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left';
+    ctx.fillText(text, x + 5, y);
+  }
+
+  function line(ctx, a, b, color, width = 1.5, dash) {
+    ctx.beginPath();
+    ctx.setLineDash(dash || []);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = color; ctx.lineWidth = width;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // ---------- 3-second cybernetic scan ----------
+  const PHASES = [
+    'Triangulating Delaunay mesh',
+    'Computing canthal & orbital vectors',
+    'Resolving gonial / ramus geometry',
+    'Projecting Frankfurt horizontal',
+    'Applying critical failo gates',
+  ];
+
+  function scan(data, done) {
+    const overlay = $('#scan-overlay');
+    overlay.hidden = false;
+    overlay.classList.remove('out');
+    const bar = $('#scan-bar'), sub = $('#scan-sub'), log = $('#scan-log');
+    log.textContent = '';
+    const scenes = ['frontal', 'profile'].map((view, vi) => {
+      const canvas = overlay.querySelector(`canvas[data-view="${view}"]`);
+      const { ctx, w, h } = sizeCanvas(canvas);
+      const img = data.images[view];
+      const defs = L.defs(view);
+      const raw = defs.map((d) => data.landmarks[view][d.id]).filter(Boolean);
+      const t = fitTransform(img, w, h, raw, 0.35);
+      const pts = raw.map((p) => T(t, p));
+      const r = G.rng(97 + vi * 31);
+      const nodeT = pts.map(() => 0.05 + r() * 0.45);
+      const edges = G.delaunayEdges(pts).map(([a, b]) => ({ a, b, t0: Math.max(nodeT[a], nodeT[b]) + r() * 0.25 }));
+      return { view, ctx, w, h, img, t, pts, nodeT, edges, defs: defs.filter((d) => data.landmarks[view][d.id]), raw };
+    });
+
+    const allNodes = [];
+    scenes.forEach((s) => s.defs.forEach((d, i) => allNodes.push({ d, p: s.raw[i] })));
+    let logIdx = 0, lastLog = 0;
+    const D = 3000;
+    const t0 = performance.now();
+
+    function frame(now) {
+      const t = Math.min(1, (now - t0) / D);
+      for (const s of scenes) drawScan(s, t, now);
+      bar.style.width = (t * 100).toFixed(1) + '%';
+      sub.textContent = `▸ ${PHASES[Math.min(PHASES.length - 1, Math.floor(t * PHASES.length))]} · ${Math.round(t * 100)}%`;
+      if (now - lastLog > 70 && logIdx < allNodes.length * 2) {
+        lastLog = now;
+        const n = allNodes[logIdx % allNodes.length];
+        const lines = log.textContent.split('\n').filter(Boolean);
+        lines.push(`> ${n.d.id.padEnd(28)} (${n.p.x.toFixed(2).padStart(8)}, ${n.p.y.toFixed(2).padStart(8)})  ${logIdx < allNodes.length ? 'LOCKED' : 'VECTOR OK'}`);
+        log.textContent = lines.slice(-6).join('\n');
+        logIdx++;
+      }
+      if (t < 1) requestAnimationFrame(frame);
+      else {
+        overlay.classList.add('out');
+        setTimeout(() => { overlay.hidden = true; overlay.classList.remove('out'); done(); }, 340);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function drawScan(s, t, now) {
+    const { ctx, w, h, img } = s;
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(s.t.ox, s.t.oy);
+    ctx.scale(s.t.s, s.t.s);
+    ctx.globalAlpha = 0.55;
+    ctx.filter = 'grayscale(1) contrast(1.25) brightness(0.65)';
+    ctx.drawImage(img, 0, 0);
+    ctx.filter = 'none';
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(0,40,30,.25)';
+    ctx.fillRect(0, 0, w, h);
+
+    // grid
+    ctx.strokeStyle = 'rgba(0,240,255,.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x < w; x += 24) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+    for (let y = 0; y < h; y += 24) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+    ctx.stroke();
+
+    // mesh edges grow in
+    for (const e of s.edges) {
+      const k = G.clamp((t - e.t0) / 0.15, 0, 1);
+      if (k <= 0) continue;
+      const a = s.pts[e.a], b = s.pts[e.b];
+      const end = { x: G.lerp(a.x, b.x, k), y: G.lerp(a.y, b.y, k) };
+      ctx.strokeStyle = `rgba(57,255,20,${0.25 + 0.45 * k})`;
+      ctx.lineWidth = 1;
+      ctx.shadowColor = '#39FF14';
+      ctx.shadowBlur = 6;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(end.x, end.y); ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+
+    // nodes
+    s.pts.forEach((p, i) => {
+      const k = G.clamp((t - s.nodeT[i]) / 0.08, 0, 1);
+      if (!k) return;
+      const pulse = 1 + 0.5 * Math.sin(now / 120 + i);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.2 + (1 - k) * 10, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,240,255,${k})`;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4.5 * pulse, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0,240,255,${0.35 * k})`;
+      ctx.stroke();
+    });
+
+    // sweeping scanline
+    const sy = ((t * 2.2) % 1) * h;
+    const g = ctx.createLinearGradient(0, sy - 40, 0, sy);
+    g.addColorStop(0, 'rgba(57,255,20,0)');
+    g.addColorStop(1, 'rgba(57,255,20,.28)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, sy - 40, w, 40);
+    ctx.fillStyle = '#39FF14';
+    ctx.fillRect(0, sy, w, 1.5);
+  }
+
+  // ---------- annotated diagnostic images ----------
+  function drawAnnotated(canvas, img, P, view, analysis) {
+    const { ctx, w, h } = sizeCanvas(canvas);
+    const defs = L.defs(view);
+    const raw = defs.map((d) => P[d.id]).filter(Boolean);
+    const t = fitTransform(img, w, h, raw, 0.22);
+    ctx.fillStyle = '#050507';
+    ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(t.ox, t.oy); ctx.scale(t.s, t.s);
+    ctx.globalAlpha = 0.7;
+    ctx.drawImage(img, 0, 0);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    const S = (id) => (P[id] ? T(t, P[id]) : null);
+    const metric = (key) => analysis[view].find((m) => m.key === key);
+    const colorOf = (m) => (m && m.status === 'ideal' ? '#39FF14' : m && m.status === 'failo' ? '#FF2A3D' : '#E0B84A');
+
+    for (const [a, b] of L.conns(view)) {
+      const p = S(a), q = S(b);
+      if (p && q) line(ctx, p, q, 'rgba(0,240,255,.35)', 1, [3, 3]);
+    }
+
+    if (view === 'frontal') {
+      const fw = metric('fwhr'), ct = metric('canthalTilt'), mf = metric('midface'), bg = metric('bigonial');
+      const zl = S('Left_Zygoma'), zr = S('Right_Zygoma'), gl = S('Glabella'), ls = S('Labiale_Superius');
+      if (zl && zr) { line(ctx, zr, zl, colorOf(fw), 2); label(ctx, `FWHR ${fw.display}`, Math.min(zr.x, zl.x), zr.y - 8, colorOf(fw)); }
+      if (gl && ls && zl && zr) {
+        line(ctx, { x: zr.x, y: gl.y }, { x: zl.x, y: gl.y }, 'rgba(255,255,255,.25)', 1, [5, 4]);
+        line(ctx, { x: zr.x, y: ls.y }, { x: zl.x, y: ls.y }, 'rgba(255,255,255,.25)', 1, [5, 4]);
+      }
+      for (const side of ['Left', 'Right']) {
+        const a = S(side + '_Inner_Canthus'), b = S(side + '_Outer_Canthus');
+        if (!a || !b) continue;
+        const d = G.sub(b, a);
+        line(ctx, G.sub(a, G.mul(d, 0.3)), G.add(b, G.mul(d, 0.5)), colorOf(ct), 1.8);
+      }
+      const ol = S('Left_Outer_Canthus');
+      if (ol && ct) label(ctx, `TILT ${ct.display}`, ol.x + 8, ol.y - 10, colorOf(ct));
+      const pl = S('Left_Pupil'), pr = S('Right_Pupil');
+      if (pl && pr && mf) { line(ctx, pr, pl, colorOf(mf), 1.2); }
+      const gol = S('Left_Gonion'), gor = S('Right_Gonion');
+      if (gol && gor && bg) { line(ctx, gor, gol, colorOf(bg), 1.8); label(ctx, `Go/Zy ${bg.display}`, gor.x, gor.y + 18, colorOf(bg)); }
+      if (mf && pr) label(ctx, `MIDFACE ${mf.display}`, pr.x - 40, (pr.y + (ls ? ls.y : pr.y)) / 2, colorOf(mf));
+    } else {
+      const go = S('Profile_Gonion'), ra = S('Profile_Ramus_Top'), me = S('Profile_Menton');
+      const gm = metric('gonial'), cv = metric('convexity'), nl = metric('nasolabial'), cm = metric('cervicomental');
+      if (go && ra && me) {
+        line(ctx, ra, go, colorOf(gm), 2.2);
+        line(ctx, go, me, colorOf(gm), 2.2);
+        label(ctx, `∠G ${gm.display}`, go.x - 70, go.y + 22, colorOf(gm));
+      }
+      const g = S('Profile_Glabella'), sn = S('Profile_Subnasale'), pog = S('Profile_Pogonion');
+      if (g && sn && pog) {
+        line(ctx, g, sn, colorOf(cv), 1.6);
+        line(ctx, sn, pog, colorOf(cv), 1.6);
+        label(ctx, `CONVEX ${cv.display}`, sn.x + 12, sn.y + 4, colorOf(cv));
+      }
+      const tip = S('Profile_Nasal_Tip'), ls = S('Profile_Labiale_Superius');
+      if (tip && sn && ls) {
+        line(ctx, sn, tip, colorOf(nl), 1.4);
+        line(ctx, sn, ls, colorOf(nl), 1.4);
+        label(ctx, `NL ${nl.display}`, tip.x + 8, tip.y - 6, colorOf(nl));
+      }
+      const c = S('Profile_Submental_Point');
+      if (c && me) {
+        line(ctx, c, me, colorOf(cm), 1.6);
+        line(ctx, c, { x: c.x, y: c.y + 60 }, colorOf(cm), 1.2, [4, 3]);
+        label(ctx, `CM ${cm.display}`, c.x - 20, c.y + 30, colorOf(cm));
+      }
+      const co = S('Profile_Cornea'), or = S('Profile_Infraorbital_Rim');
+      const ov = metric('orbital');
+      if (co && or) {
+        line(ctx, { x: co.x, y: co.y - 16 }, { x: co.x, y: or.y + 12 }, 'rgba(255,255,255,.35)', 1, [3, 3]);
+        line(ctx, { x: or.x, y: or.y - 10 }, { x: or.x, y: or.y + 10 }, colorOf(ov), 2);
+      }
+    }
+
+    for (const d of defs) {
+      const p = S(d.id);
+      if (!p) continue;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2);
+      ctx.fillStyle = L.color(d.group);
+      ctx.fill();
+    }
+  }
+
+  // ---------- radar ----------
+  function radarSVG(axes, color) {
+    const VW = 560, VH = 400, cx = VW / 2, c = VH / 2, R = 135;
+    const n = axes.length;
+    const pt = (i, v) => {
+      const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+      return { x: cx + Math.cos(a) * R * v / 10, y: c + Math.sin(a) * R * v / 10 };
+    };
+    const poly = (vals) => vals.map((v, i) => { const p = pt(i, v); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(' ');
+    let s = `<svg class="radar" viewBox="0 0 ${VW} ${VH}" role="img" aria-label="Six-axis radar chart">`;
+    for (const r of [2, 4, 6, 8, 10]) {
+      s += `<polygon points="${poly(axes.map(() => r))}" fill="${r === 10 ? 'rgba(255,255,255,.015)' : 'none'}" stroke="rgba(255,255,255,${r === 10 ? 0.18 : 0.08})"/>`;
+    }
+    s += `<polygon points="${poly(axes.map(() => 5))}" fill="none" stroke="rgba(0,240,255,.45)" stroke-dasharray="4 4"/>`;
+    axes.forEach((a, i) => {
+      const p = pt(i, 10);
+      s += `<line x1="${cx}" y1="${c}" x2="${p.x}" y2="${p.y}" stroke="rgba(255,255,255,.08)"/>`;
+    });
+    s += `<polygon points="${poly(axes.map((a) => a.value))}" fill="${color}" fill-opacity=".18" stroke="${color}" stroke-width="2" style="filter:drop-shadow(0 0 8px ${color})"/>`;
+    axes.forEach((a, i) => {
+      const p = pt(i, a.value);
+      s += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}"/>`;
+      const lp = pt(i, 11.4);
+      const anchor = Math.abs(lp.x - cx) < 10 ? 'middle' : lp.x > cx ? 'start' : 'end';
+      s += `<text x="${lp.x}" y="${lp.y}" text-anchor="${anchor}" dominant-baseline="middle">${esc(a.label.toUpperCase())}</text>`;
+      s += `<text class="rv" x="${lp.x}" y="${lp.y + 13}" text-anchor="${anchor}" dominant-baseline="middle">${a.value.toFixed(1)}</text>`;
+    });
+    s += `<text x="${cx + 4}" y="${c - R / 2 - 3}" style="fill:rgba(0,240,255,.7)">μ 5.0</text></svg>`;
+    return s;
+  }
+
+  // ---------- Gaussian placement ----------
+  function bellSVG(score, color) {
+    const W = 640, H = 130, x0 = 30, x1 = W - 30, base = H - 26;
+    const X = (v) => x0 + ((v - 1) / 9) * (x1 - x0);
+    const Y = (v) => base - G.normPdf(v - 5) / G.normPdf(0) * (base - 14);
+    let path = '', fill = '';
+    for (let v = 1; v <= 10.001; v += 0.05) path += `${path ? 'L' : 'M'}${X(v).toFixed(1)},${Y(v).toFixed(1)}`;
+    for (let v = 1; v <= score + 0.001; v += 0.05) fill += `L${X(v).toFixed(1)},${Y(v).toFixed(1)}`;
+    fill = `M${X(1)},${base}${fill}L${X(score)},${Y(score)}L${X(score)},${base}Z`;
+    let ticks = '';
+    for (let v = 1; v <= 10; v++) ticks += `<line x1="${X(v)}" y1="${base}" x2="${X(v)}" y2="${base + 4}" stroke="rgba(255,255,255,.25)"/><text x="${X(v)}" y="${base + 16}" text-anchor="middle">${v}</text>`;
+    return `<svg class="bell" viewBox="0 0 ${W} ${H}" role="img" aria-label="Score position on a normal distribution, mean 5, sigma 1">
+      <path d="${fill}" fill="${color}" fill-opacity=".18"/>
+      <path d="${path}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>
+      <line x1="${x0}" y1="${base}" x2="${x1}" y2="${base}" stroke="rgba(255,255,255,.2)"/>
+      ${ticks}
+      <line x1="${X(5)}" y1="14" x2="${X(5)}" y2="${base}" stroke="rgba(0,240,255,.4)" stroke-dasharray="3 3"/>
+      <text x="${X(5) + 4}" y="20" style="fill:rgba(0,240,255,.8)">μ = 5.0  σ = 1.0</text>
+      <line x1="${X(score)}" y1="8" x2="${X(score)}" y2="${base}" stroke="${color}" stroke-width="2.5" style="filter:drop-shadow(0 0 6px ${color})"/>
+      <circle cx="${X(score)}" cy="${Y(score)}" r="5" fill="${color}"/>
+      <text x="${X(score)}" y="6" text-anchor="middle" style="fill:${color};font-weight:700">YOU ${score.toFixed(2)}</text>
+    </svg>`;
+  }
+
+  // ---------- odometer ----------
+  function odometerHTML(final) {
+    const str = final.toFixed(2);
+    let html = '';
+    for (const ch of str) {
+      if (ch === '.') { html += '<span class="odo-dot">.</span>'; continue; }
+      let digits = '';
+      for (let d = 0; d <= 10; d++) digits += `<span>${d % 10}</span>`;
+      html += `<span class="odo-col"><span class="odo-strip">${digits}</span></span>`;
+    }
+    return html + '<span class="odo-max">/10</span>';
+  }
+
+  function runOdometer(root, final, duration, onDone) {
+    const strips = [...root.querySelectorAll('.odo-strip')].reverse(); // [hundredths, tenths, units, tens]
+    const target = Math.round(final * 100);
+    const t0 = performance.now();
+    const ease = (t) => 1 - Math.pow(1 - t, 4);
+    function pos(n, k) {
+      const p = Math.pow(10, k);
+      const d = Math.floor(n / p) % 10;
+      const frac = k === 0 ? n - Math.floor(n) : Math.max(0, (n % p) - (p - 1));
+      return d + frac;
+    }
+    function frame(now) {
+      const t = Math.min(1, (now - t0) / duration);
+      const n = t >= 1 ? target : target * ease(t);
+      strips.forEach((s, k) => { s.style.transform = `translateY(${-pos(n, k)}em)`; });
+      if (t < 1) requestAnimationFrame(frame);
+      else if (onDone) onDone();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- matrix table ----------
+  const STATUS = { ideal: 'MOG / IDEAL', average: 'AVERAGE', failo: 'FAILO / DOGGED', na: 'N/A' };
+
+  function tableHTML(title, list, sub, sex) {
+    const sym = sex === 'female' ? '♀' : '♂';
+    const rows = list.map((m) => `
+      <tr class="st-${m.status}">
+        <td><b>${esc(m.label)}</b>${m.critical ? '<span class="gate-mark" title="Critical failo gate">◆ GATE</span>' : ''}<small>${esc(m.formula)}</small></td>
+        <td class="v">${esc(m.display)}${m.detail ? `<small>${esc(m.detail)}</small>` : ''}</td>
+        <td class="t"><span class="nw">${m.sexSpecific ? sym + ' ' : ''}${esc(m.target.ideal)}</span>${m.target.failo ? `<small>Failo ${esc(m.target.failo)}</small>` : ''}</td>
+        <td><span class="pill ${m.status}">${STATUS[m.status]}</span></td>
+      </tr>`).join('');
+    return `<section class="card">
+      <header><h3>${title}</h3><small>${sub}</small></header>
+      <table class="matrix">
+        <thead><tr><th>Metric</th><th>Measured</th><th>PSL Target</th><th>Status</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>`;
+  }
+
+  function summaryText(result, analysis) {
+    const r = result;
+    const lines = [
+      `DO I MOG OR DOG — ${r.tier.badge}`,
+      `PSL ${r.final.toFixed(2)} / 10 · ${r.tier.name} · ${r.percentile.toFixed(1)}th percentile`,
+    ];
+    if (r.cap != null) lines.push(`Hard cap ${r.cap.toFixed(2)} (${r.capLabel}) from ${r.crits.length} critical failo(s); uncapped ${r.base.toFixed(2)}`);
+    lines.push('', 'FRONTAL');
+    analysis.frontal.forEach((m) => lines.push(`  ${m.label}: ${m.display} [${STATUS[m.status]}]`));
+    lines.push('PROFILE');
+    analysis.profile.forEach((m) => lines.push(`  ${m.label}: ${m.display} [${STATUS[m.status]}]`));
+    return lines.join('\n');
+  }
+
+  // ---------- reveal ----------
+  function render(root, ctx) {
+    const { analysis, result, images, landmarks, sex, animate = true } = ctx;
+    const r = result;
+    const color = r.tier.color;
+    const allGates = analysis.frontal.concat(analysis.profile).filter((m) => m.critical);
+    const pctTop = 100 - r.percentile;
+
+    root.innerHTML = `
+    <div class="reveal" style="--tier:${color}">
+      <section class="hero-card">
+        <div class="eyebrow">Step 04 · Final Verdict · ${sex === 'female' ? '♀ Female' : '♂ Male'} standard</div>
+        <div class="stamp-wrap"><div class="stamp" id="verdict-stamp">${esc(r.tier.badge)}</div></div>
+        <div class="odometer" id="odometer" aria-label="PSL score ${r.final.toFixed(2)} out of 10">${odometerHTML(r.final)}</div>
+        <div class="tier-name">${esc(r.tier.name)}</div>
+        <div class="score-meta">
+          <span>PERCENTILE <b>${r.percentile.toFixed(1)}</b></span>
+          <span>${pctTop < 50 ? 'TOP' : 'BOTTOM'} <b>${(pctTop < 50 ? pctTop : r.percentile).toFixed(1)}%</b></span>
+          <span>σ <b>${r.sigma >= 0 ? '+' : '−'}${Math.abs(r.sigma).toFixed(2)}</b></span>
+          <span>IDEAL <b>${r.counts.ideal}</b> · AVG <b>${r.counts.average}</b> · FAILO <b>${r.counts.failo}</b></span>
+        </div>
+        ${r.cap != null ? `<div class="cap-notice">⚠ ${r.crits.length} CRITICAL FAILO${r.crits.length > 1 ? 'S' : ''} DETECTED (${r.crits.map((m) => esc(m.critical.label)).join(', ')}). HARD CAP ${r.cap.toFixed(2)} · ${esc(r.capLabel)}. Uncapped geometry scored ${r.base.toFixed(2)}.</div>` : ''}
+        ${bellSVG(r.final, color)}
+      </section>
+
+      ${analysis.warnings.length ? `<div class="warnings">${analysis.warnings.map((w) => `<div>⚠ ${esc(w)}</div>`).join('')}</div>` : ''}
+
+      <section class="card">
+        <header><h3>Critical Failo Gates</h3><small>1 fail → cap 5.40 · 2 → cap 4.40 · 3+ → sub-4.00</small></header>
+        <div class="gates">
+          ${allGates.map((m) => `<div class="gate ${m.value == null ? 'na' : m.critical.hit ? 'fail' : 'pass'}"><i>${m.value == null ? 'N/A' : m.critical.hit ? 'FAIL' : 'PASS'}</i><span>${esc(m.critical.label)} <small style="color:var(--dim)">${esc(m.critical.rule)}</small></span><span class="gv">${esc(m.display)}</span></div>`).join('')}
+        </div>
+        <div class="factors">
+          <div class="mog"><h4>▲ Mog Factors</h4><ul>${r.strengths.map((m) => `<li>${esc(m.label)}<span>${esc(m.display)}</span></li>`).join('') || '<li>None<span>—</span></li>'}</ul></div>
+          <div class="dog"><h4>▼ Dog Factors</h4><ul>${r.weaknesses.map((m) => `<li>${esc(m.label)}<span>${esc(m.display)}</span></li>`).join('') || '<li>None<span>—</span></li>'}</ul></div>
+        </div>
+      </section>
+
+      <div class="grid-2">
+        <section class="card">
+          <header><h3>Morphometric Radar</h3><small>0–10 per axis · dashed ring = population mean</small></header>
+          ${radarSVG(r.axes, color)}
+          <div class="subscores">
+            <div>FRONTAL SUBSCORE<b>${r.frontalScore.toFixed(2)}</b></div>
+            <div>PROFILE SUBSCORE<b>${r.profileScore.toFixed(2)}</b></div>
+          </div>
+        </section>
+        <section class="card">
+          <header><h3>Vector Overlay</h3><small>green ideal · gold average · red failo</small></header>
+          <div class="annot"><canvas id="annot-frontal"></canvas><canvas id="annot-profile"></canvas></div>
+        </section>
+      </div>
+
+      <div class="grid-2 matrix-grid">
+        ${tableHTML('Frontal Metrics', analysis.frontal, `${analysis.frontal.length} measures · subscore ${r.frontalScore.toFixed(2)}`, sex)}
+        ${tableHTML('Profile Metrics', analysis.profile, `${analysis.profile.length} measures · subscore ${r.profileScore.toFixed(2)}`, sex)}
+      </div>
+
+      <div class="result-actions">
+        <button class="btn ghost" data-res="adjust">← Adjust Landmarks</button>
+        <button class="btn ghost" data-res="copy">⧉ Copy Verdict</button>
+        <button class="btn ghost danger" data-res="new">New Subject</button>
+      </div>
+    </div>`;
+
+    requestAnimationFrame(() => {
+      drawAnnotated($('#annot-frontal', root), images.frontal, landmarks.frontal, 'frontal', analysis);
+      drawAnnotated($('#annot-profile', root), images.profile, landmarks.profile, 'profile', analysis);
+    });
+
+    const stamp = $('#verdict-stamp', root);
+    if (animate) runOdometer(root, r.final, 2200, () => stamp.classList.add('slam'));
+    else { runOdometer(root, r.final, 1, null); stamp.classList.add('slam'); }
+
+    root.querySelector('.result-actions').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-res]');
+      if (!b) return;
+      if (b.dataset.res === 'adjust') ctx.onAdjust();
+      else if (b.dataset.res === 'new') ctx.onNew();
+      else if (b.dataset.res === 'copy') {
+        const text = summaryText(r, analysis);
+        (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+          .then(() => ctx.toast('Verdict copied to clipboard'))
+          .catch(() => ctx.toast('Clipboard unavailable'));
+      }
+    });
+  }
+
+  function redrawAnnotations(root, ctx) {
+    const f = $('#annot-frontal', root), p = $('#annot-profile', root);
+    if (f && p && f.offsetParent) {
+      drawAnnotated(f, ctx.images.frontal, ctx.landmarks.frontal, 'frontal', ctx.analysis);
+      drawAnnotated(p, ctx.images.profile, ctx.landmarks.profile, 'profile', ctx.analysis);
+    }
+  }
+
+  M.results = { scan, render, redrawAnnotations };
+})(window.MOG = window.MOG || {});
+
+</script>
+<script>
+/* js/demo.js */
+/* Do I Mog or Dog — synthetic demo subject (schematic face rendered from the landmark templates) */
+(function (M) {
+  'use strict';
+  const L = M.landmarks;
+  const G = M.geo;
+  const W = 900, H = 1200;
+
+  function spline(ctx, pts, closed) {
+    const n = pts.length;
+    const get = (i) => (closed ? pts[(i + n) % n] : pts[G.clamp(i, 0, n - 1)]);
+    ctx.moveTo(pts[0].x, pts[0].y);
+    const segs = closed ? n : n - 1;
+    for (let i = 0; i < segs; i++) {
+      const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+      ctx.bezierCurveTo(
+        p1.x + (p2.x - p0.x) / 6, p1.y + (p2.y - p0.y) / 6,
+        p2.x - (p3.x - p1.x) / 6, p2.y - (p3.y - p1.y) / 6,
+        p2.x, p2.y);
+    }
+    if (closed) ctx.closePath();
+  }
+
+  function points(view, jitter) {
+    const r = G.rng(view === 'frontal' ? 11 : 23);
+    const box = L.faceBox(view, W, H);
+    const out = {};
+    for (const d of L.defs(view)) {
+      const p = L.seed(view, d, W, H, 'right');
+      out[d.id] = { x: p.x + (r() - 0.5) * jitter * box.w, y: p.y + (r() - 0.5) * jitter * box.h };
+    }
+    return out;
+  }
+
+  function backdrop(ctx) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#2a2e36');
+    g.addColorStop(1, '#14161b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function skin(ctx, cx, cy, r) {
+    const g = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
+    g.addColorStop(0, '#e2b293');
+    g.addColorStop(1, '#b67e60');
+    return g;
+  }
+
+  function frontal(P) {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    backdrop(ctx);
+    const cx = (P.Left_Pupil.x + P.Right_Pupil.x) / 2;
+    const Tr = P.Hairline_Trichion, Gl = P.Glabella, Me = P.Menton;
+    const Lz = P.Left_Zygoma, Rz = P.Right_Zygoma, LGo = P.Left_Gonion, RGo = P.Right_Gonion;
+
+    // neck + shoulders
+    const nh = (LGo.x - RGo.x) * 0.33;
+    ctx.fillStyle = '#a8735a';
+    ctx.fillRect(cx - nh, Me.y - 120, nh * 2, H);
+    ctx.fillStyle = '#1d2230';
+    ctx.beginPath();
+    ctx.moveTo(cx - nh, H * 0.9);
+    ctx.bezierCurveTo(cx - nh - 60, H * 0.95, 80, H * 0.93, 0, H);
+    ctx.lineTo(W, H);
+    ctx.bezierCurveTo(W - 80, H * 0.93, cx + nh + 60, H * 0.95, cx + nh, H * 0.9);
+    ctx.closePath();
+    ctx.fill();
+
+    // ears
+    ctx.fillStyle = '#b07a5d';
+    const earY = (P.Left_Pupil.y + P.Left_Alar.y) / 2;
+    for (const x of [Rz.x + 10, Lz.x - 10]) { ctx.beginPath(); ctx.ellipse(x, earY, 26, 66, 0, 0, Math.PI * 2); ctx.fill(); }
+
+    // face
+    const outline = [
+      { x: cx, y: Tr.y - 50 },
+      { x: Lz.x - 28, y: Tr.y + 30 }, { x: Lz.x - 6, y: Gl.y + 10 }, Lz,
+      { x: Lz.x - 14, y: (Lz.y + LGo.y) / 2 }, LGo,
+      { x: cx + (LGo.x - cx) * 0.42, y: Me.y - 22 }, { x: cx, y: Me.y },
+      { x: cx - (cx - RGo.x) * 0.42, y: Me.y - 22 }, RGo,
+      { x: Rz.x + 14, y: (Rz.y + RGo.y) / 2 }, Rz, { x: Rz.x + 6, y: Gl.y + 10 }, { x: Rz.x + 28, y: Tr.y + 30 },
+    ];
+    ctx.fillStyle = skin(ctx, cx, (Gl.y + P.Subnasale.y) / 2, (Lz.x - Rz.x) * 0.75);
+    ctx.beginPath(); spline(ctx, outline, true); ctx.fill();
+
+    // hair
+    ctx.fillStyle = '#1b1310';
+    ctx.beginPath();
+    ctx.moveTo(Rz.x - 4, Gl.y - 40);
+    ctx.bezierCurveTo(Rz.x - 50, Tr.y - 190, Lz.x + 50, Tr.y - 190, Lz.x + 4, Gl.y - 40);
+    ctx.quadraticCurveTo(Lz.x - 40, Tr.y, cx, Tr.y);
+    ctx.quadraticCurveTo(Rz.x + 40, Tr.y, Rz.x - 4, Gl.y - 40);
+    ctx.fill();
+
+    // brows
+    ctx.strokeStyle = '#2a1c15';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 13;
+    for (const s of ['Left', 'Right']) {
+      const inn = P[s + '_Inner_Canthus'], out = P[s + '_Outer_Canthus'], up = P[s + '_Upper_Eyelid'];
+      const dir = Math.sign(out.x - inn.x);
+      ctx.beginPath();
+      ctx.moveTo(inn.x - dir * 6, up.y - 34);
+      ctx.quadraticCurveTo(up.x + dir * 30, up.y - 52, out.x + dir * 12, up.y - 36);
+      ctx.stroke();
+    }
+
+    // eyes
+    for (const s of ['Left', 'Right']) {
+      const inn = P[s + '_Inner_Canthus'], out = P[s + '_Outer_Canthus'];
+      const up = P[s + '_Upper_Eyelid'], lo = P[s + '_Lower_Eyelid'], pu = P[s + '_Pupil'];
+      const my = (inn.y + out.y) / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(inn.x, inn.y);
+      ctx.quadraticCurveTo(up.x, 2 * up.y - my, out.x, out.y);
+      ctx.quadraticCurveTo(lo.x, 2 * lo.y - my, inn.x, inn.y);
+      ctx.fillStyle = '#efe9e3';
+      ctx.fill();
+      ctx.clip();
+      ctx.fillStyle = '#4c6a3c';
+      ctx.beginPath(); ctx.arc(pu.x, pu.y, 19, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#0c0c0c';
+      ctx.beginPath(); ctx.arc(pu.x, pu.y, 7.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.8)';
+      ctx.beginPath(); ctx.arc(pu.x + 5, pu.y - 5, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = '#3a271e';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(inn.x, inn.y);
+      ctx.quadraticCurveTo(up.x, 2 * up.y - my, out.x, out.y);
+      ctx.stroke();
+    }
+
+    // nose
+    const la = P.Left_Alar, ra = P.Right_Alar, sn = P.Subnasale;
+    ctx.strokeStyle = 'rgba(110,68,50,.55)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(P.Right_Inner_Canthus.x + 12, P.Right_Inner_Canthus.y + 14);
+    ctx.quadraticCurveTo(ra.x + 8, (Gl.y + sn.y) / 2 + 30, ra.x + 4, ra.y - 22);
+    ctx.moveTo(P.Left_Inner_Canthus.x - 12, P.Left_Inner_Canthus.y + 14);
+    ctx.quadraticCurveTo(la.x - 8, (Gl.y + sn.y) / 2 + 30, la.x - 4, la.y - 22);
+    ctx.stroke();
+    ctx.strokeStyle = '#7c4c38';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(ra.x, ra.y - 14);
+    ctx.quadraticCurveTo(ra.x - 4, ra.y + 14, cx - 14, sn.y - 2);
+    ctx.quadraticCurveTo(cx, sn.y + 6, cx + 14, sn.y - 2);
+    ctx.quadraticCurveTo(la.x + 4, la.y + 14, la.x, la.y - 14);
+    ctx.stroke();
+    ctx.fillStyle = '#5a3426';
+    for (const x of [cx - 20, cx + 20]) { ctx.beginPath(); ctx.ellipse(x, sn.y - 9, 10, 5, 0, 0, Math.PI * 2); ctx.fill(); }
+
+    // mouth
+    const lc = P.Left_Cheilion, rc = P.Right_Cheilion, ls = P.Labiale_Superius, li = P.Labiale_Inferius;
+    const st = (ls.y + li.y) / 2 - 6;
+    ctx.fillStyle = '#b4625a';
+    ctx.beginPath();
+    ctx.moveTo(rc.x, rc.y);
+    ctx.quadraticCurveTo(cx - 34, ls.y - 4, cx - 9, ls.y);
+    ctx.quadraticCurveTo(cx, ls.y + 6, cx + 9, ls.y);
+    ctx.quadraticCurveTo(cx + 34, ls.y - 4, lc.x, lc.y);
+    ctx.quadraticCurveTo(cx, st + 6, rc.x, rc.y);
+    ctx.fill();
+    ctx.fillStyle = '#c4726a';
+    ctx.beginPath();
+    ctx.moveTo(rc.x, rc.y);
+    ctx.quadraticCurveTo(cx, st + 6, lc.x, lc.y);
+    ctx.quadraticCurveTo(cx, 2 * li.y - lc.y, rc.x, rc.y);
+    ctx.fill();
+    ctx.strokeStyle = '#6e3530';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(rc.x, rc.y); ctx.quadraticCurveTo(cx, st + 6, lc.x, lc.y); ctx.stroke();
+
+    // jaw shading
+    ctx.strokeStyle = 'rgba(90,50,35,.25)';
+    ctx.lineWidth = 6;
+    ctx.beginPath(); spline(ctx, [Rz, RGo, { x: cx, y: Me.y - 4 }, LGo, Lz], false); ctx.stroke();
+    return c.toDataURL('image/jpeg', 0.9);
+  }
+
+  function profile(P) {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    backdrop(ctx);
+    const b = L.faceBox('profile', W, H);
+    const B = (x, y) => ({ x: b.x + x * b.w, y: b.y + y * b.h });
+    const p = (id) => P['Profile_' + id];
+
+    // shoulders
+    ctx.fillStyle = '#1d2230';
+    ctx.beginPath();
+    ctx.moveTo(B(0.2, 1.02).x, H);
+    ctx.bezierCurveTo(B(0.25, 0.98).x, B(0, 0.97).y, B(0.7, 0.97).x, B(0, 0.98).y, B(0.85, 1.05).x, H);
+    ctx.fill();
+
+    const tr = p('Trichion'), gl = p('Glabella'), n = p('Nasion'), tip = p('Nasal_Tip'), sn = p('Subnasale');
+    const ls = p('Labiale_Superius'), li = p('Labiale_Inferius'), sm = p('Mentolabial_Sulcus'), pog = p('Pogonion');
+    const me = p('Menton'), c2 = p('Submental_Point'), ra = p('Ramus_Top'), go = p('Gonion');
+    const stom = { x: ls.x - 0.02 * b.w, y: (ls.y + li.y) / 2 };
+    const head = [
+      tr, B(0.645, 0.22), gl, n, { x: (n.x + tip.x) / 2 + 6, y: (n.y + tip.y) / 2 }, tip,
+      { x: tip.x - 0.035 * b.w, y: tip.y + 0.03 * b.h }, sn, ls, stom, li, sm, pog, me, c2,
+      { x: c2.x + 6, y: B(0, 0.95).y }, { x: c2.x - 4, y: H + 20 }, { x: B(0.29, 0).x, y: H + 20 },
+      B(0.30, 0.86), B(0.24, 0.66), B(0.17, 0.45), B(0.22, 0.24), B(0.38, 0.08),
+    ];
+    ctx.fillStyle = skin(ctx, B(0.5, 0.45).x, B(0.5, 0.45).y, b.h * 0.6);
+    ctx.beginPath(); spline(ctx, head, true); ctx.fill();
+
+    // hair
+    ctx.fillStyle = '#1b1310';
+    ctx.beginPath();
+    spline(ctx, [tr, B(0.38, 0.06), B(0.21, 0.22), B(0.16, 0.45), B(0.2, 0.6), B(0.3, 0.52), B(0.36, 0.36), B(0.5, 0.24), B(0.58, 0.16)], true);
+    ctx.fill();
+
+    // ear
+    ctx.fillStyle = '#b07a5d';
+    ctx.beginPath(); ctx.ellipse(ra.x - 0.04 * b.w, ra.y - 0.07 * b.h, 0.04 * b.w, 0.075 * b.h, 0.15, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(80,45,30,.6)';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(ra.x - 0.04 * b.w, ra.y - 0.07 * b.h, 0.022 * b.w, 0.05 * b.h, 0.15, 0, Math.PI * 2); ctx.stroke();
+
+    // eye + brow
+    const co = p('Cornea');
+    ctx.fillStyle = '#efe9e3';
+    ctx.beginPath();
+    ctx.moveTo(co.x - 0.07 * b.w, co.y - 2);
+    ctx.quadraticCurveTo(co.x - 0.02 * b.w, co.y - 0.025 * b.h, co.x, co.y);
+    ctx.quadraticCurveTo(co.x - 0.02 * b.w, co.y + 0.02 * b.h, co.x - 0.07 * b.w, co.y - 2);
+    ctx.fill();
+    ctx.fillStyle = '#3d5a30';
+    ctx.beginPath(); ctx.ellipse(co.x - 0.012 * b.w, co.y, 5, 13, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#2a1c15';
+    ctx.lineWidth = 12;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(gl.x - 0.11 * b.w, gl.y + 0.005 * b.h); ctx.quadraticCurveTo(gl.x - 0.05 * b.w, gl.y - 0.02 * b.h, gl.x - 0.01 * b.w, gl.y + 0.01 * b.h); ctx.stroke();
+
+    // nostril, lips, jaw shading
+    ctx.fillStyle = '#5a3426';
+    ctx.beginPath(); ctx.ellipse(sn.x + 0.03 * b.w, sn.y - 0.012 * b.h, 14, 6, -0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#6e3530';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(stom.x, stom.y); ctx.lineTo(stom.x - 0.05 * b.w, stom.y + 4); ctx.stroke();
+    ctx.strokeStyle = 'rgba(90,50,35,.3)';
+    ctx.lineWidth = 6;
+    ctx.beginPath(); spline(ctx, [ra, go, me], false); ctx.stroke();
+    return c.toDataURL('image/jpeg', 0.9);
+  }
+
+  function create() {
+    const fp = points('frontal', 0.006);
+    const pp = points('profile', 0.006);
+    return {
+      frontal: { photo: { src: frontal(fp), w: W, h: H }, points: fp },
+      profile: { photo: { src: profile(pp), w: W, h: H }, points: pp },
+    };
+  }
+
+  M.demo = { create };
+})(window.MOG = window.MOG || {});
+
+</script>
+<script>
+/* js/app.js */
+/* Do I Mog or Dog — app state, navigation, persistence and wiring */
+(function (M) {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const STORE = 'mogordog.v1';
+  const VIEWS = ['frontal', 'profile'];
+
+  const state = {
+    sex: 'male',
+    calibrated: false,
+    screen: 'capture',
+    view: 'frontal',
+    facing: 'right',
+    guides: true,
+    photos: { frontal: null, profile: null },
+    landmarks: { frontal: {}, profile: {} },
+  };
+  const images = { frontal: null, profile: null };
+  let editor = null;
+  let last = null; // { analysis, result }
+
+  // ---------- persistence ----------
+  function restore() {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE) || 'null');
+      if (!s) return;
+      Object.assign(state, s);
+      state.photos = Object.assign({ frontal: null, profile: null }, s.photos);
+      state.landmarks = Object.assign({ frontal: {}, profile: {} }, s.landmarks);
+      for (const v of VIEWS) if (!state.photos[v]) state.landmarks[v] = {};
+    } catch (e) { /* fresh start */ }
+  }
+
+  let saveTimer = null;
+  function save() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORE, JSON.stringify(state));
+      } catch (e) {
+        try {
+          localStorage.setItem(STORE, JSON.stringify({ ...state, photos: { frontal: null, profile: null }, landmarks: { frontal: {}, profile: {} } }));
+        } catch (_) { /* storage unavailable */ }
+      }
+    }, 250);
+  }
+
+  // ---------- helpers ----------
+  let toastTimer = null;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+  }
+
+  const placedCount = (v) => M.landmarks.defs(v).filter((d) => state.landmarks[v][d.id]).length;
+  const viewComplete = (v) => placedCount(v) === M.landmarks.defs(v).length;
+  const complete = () => VIEWS.every(viewComplete);
+  const bothPhotos = () => VIEWS.every((v) => state.photos[v] && images[v]);
+
+  // ---------- navigation ----------
+  function go(screen) {
+    if (screen === 'calibrate') { openCalibration(); return; }
+    if ((screen === 'landmarks' || screen === 'results') && !bothPhotos()) { toast('Load both a frontal and a profile photo first.'); return; }
+    if (screen === 'results' && !last) {
+      if (complete()) analyze();
+      else toast('Place every landmark in both views first.');
+      return;
+    }
+    state.screen = screen;
+    save();
+    $$('.screen').forEach((s) => { s.hidden = s.id !== 'screen-' + screen; });
+    if (screen === 'landmarks') showView(state.view);
+    updateNav();
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  }
+
+  function updateNav() {
+    const steps = {
+      calibrate: { done: state.calibrated, locked: false },
+      capture: { done: bothPhotos(), locked: false },
+      landmarks: { done: complete(), locked: !bothPhotos() },
+      results: { done: !!last && state.screen === 'results', locked: !complete() },
+    };
+    $$('#stepper button').forEach((b) => {
+      const s = steps[b.dataset.step];
+      b.classList.toggle('done', s.done);
+      b.classList.toggle('locked', s.locked);
+      b.classList.toggle('active', b.dataset.step === state.screen);
+    });
+    $('#btn-to-landmarks').disabled = !bothPhotos();
+    const missing = VIEWS.filter((v) => !state.photos[v]);
+    $('#capture-status').textContent = missing.length ? `Awaiting: ${missing.join(' + ')}` : '✓ Both views locked';
+    $('#btn-analyze').disabled = !complete();
+    for (const v of VIEWS) {
+      const n = placedCount(v), t = M.landmarks.defs(v).length;
+      const el = $(`[data-count="${v}"]`);
+      el.textContent = `${n}/${t}`;
+      el.parentElement.classList.toggle('complete', n === t);
+    }
+    const remain = VIEWS.map((v) => M.landmarks.defs(v).length - placedCount(v));
+    $('#lm-status').textContent = complete()
+      ? '✓ All nodes registered: ready for analysis'
+      : `${remain[0]} frontal + ${remain[1]} profile nodes remaining`;
+    $$('[data-sex]').forEach((b) => b.classList.toggle('on', b.dataset.sex === state.sex));
+    const facingLabel = `Facing ${state.facing === 'right' ? '▶' : '◀'}`;
+    $$('[data-role="facing"], [data-tool="facing"]').forEach((b) => { b.textContent = facingLabel; });
+  }
+
+  // ---------- capture ----------
+  function renderCaptureCard(view) {
+    const card = $(`.capture-card[data-view="${view}"]`);
+    const p = state.photos[view];
+    const vp = $('[data-role="viewport"]', card);
+    const img = $('[data-role="photo"]', card);
+    card.classList.toggle('has-photo', !!p);
+    if (p) { img.src = p.src; vp.style.aspectRatio = `${p.w} / ${p.h}`; }
+    else { img.removeAttribute('src'); vp.style.aspectRatio = ''; }
+    $('[data-role="overlay"]', card).innerHTML = state.guides ? M.capture.guideSVG(view, state.facing) : '';
+    $('[data-role="status"]', card).textContent = p ? `Locked · ${p.w}×${p.h}` : 'Awaiting';
+  }
+
+  async function setPhoto(view, data, points) {
+    try {
+      images[view] = data ? await M.capture.loadImage(data.src) : null;
+    } catch (e) {
+      toast('Could not read that image.');
+      return;
+    }
+    state.photos[view] = data;
+    state.landmarks[view] = points || {};
+    last = null;
+    renderCaptureCard(view);
+    updateNav();
+    save();
+  }
+
+  function confirmReplace(view) {
+    const n = placedCount(view);
+    return !n || window.confirm(`Replacing this photo clears its ${n} placed landmark${n > 1 ? 's' : ''}. Continue?`);
+  }
+
+  async function handleFile(view, file) {
+    if (!file) return;
+    if (!confirmReplace(view)) return;
+    try {
+      await setPhoto(view, await M.capture.fromFile(file));
+      toast(`${view === 'frontal' ? 'Frontal' : 'Profile'} photo locked.`);
+    } catch (e) {
+      toast(e.message || 'Could not load image.');
+    }
+  }
+
+  function initCapture() {
+    for (const card of $$('.capture-card')) {
+      const view = card.dataset.view;
+      $('[data-role="file"]', card).addEventListener('change', (e) => {
+        handleFile(view, e.target.files[0]);
+        e.target.value = '';
+      });
+      $('[data-role="camera"]', card).addEventListener('click', () => {
+        if (!confirmReplace(view)) return;
+        M.capture.openCamera(view, state.facing, (data) => setPhoto(view, data).then(() => toast('Captured.')));
+      });
+      $('[data-role="guides"]', card).addEventListener('click', () => {
+        state.guides = !state.guides;
+        VIEWS.forEach(renderCaptureCard);
+        save();
+      });
+      $('[data-role="clear"]', card).addEventListener('click', () => {
+        if (state.photos[view] && confirmReplace(view)) setPhoto(view, null);
+      });
+      const facingBtn = $('[data-role="facing"]', card);
+      if (facingBtn) facingBtn.addEventListener('click', toggleFacing);
+
+      const vp = $('[data-role="viewport"]', card);
+      vp.addEventListener('dragover', (e) => { e.preventDefault(); vp.classList.add('drag'); });
+      vp.addEventListener('dragleave', () => vp.classList.remove('drag'));
+      vp.addEventListener('drop', (e) => {
+        e.preventDefault();
+        vp.classList.remove('drag');
+        handleFile(view, e.dataTransfer.files[0]);
+      });
+    }
+    $('#btn-to-landmarks').addEventListener('click', () => go('landmarks'));
+    $('#btn-demo').addEventListener('click', loadDemo);
+  }
+
+  function toggleFacing() {
+    state.facing = state.facing === 'right' ? 'left' : 'right';
+    VIEWS.forEach(renderCaptureCard);
+    updateNav();
+    save();
+  }
+
+  async function loadDemo() {
+    if ((placedCount('frontal') || placedCount('profile')) && !window.confirm('Load the demo subject? This replaces your current photos and landmarks.')) return;
+    const d = M.demo.create();
+    state.facing = 'right';
+    await setPhoto('frontal', d.frontal.photo, d.frontal.points);
+    await setPhoto('profile', d.profile.photo, d.profile.points);
+    toast('Demo subject loaded with pre-placed landmarks. Drag any node to see it re-score.');
+    state.view = 'frontal';
+    go('landmarks');
+  }
+
+  // ---------- landmarks ----------
+  function showView(view) {
+    state.view = view;
+    $$('#view-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.view === view));
+    $('#stage').classList.toggle('is-profile', view === 'profile');
+    editor.load({
+      view,
+      img: images[view],
+      defs: M.landmarks.defs(view),
+      points: state.landmarks[view],
+      conns: M.landmarks.conns(view),
+    });
+    updateNav();
+  }
+
+  function initLandmarks() {
+    editor = new M.LandmarkEditor({
+      stage: $('#stage'),
+      canvas: $('#editor-canvas'),
+      loupe: $('#loupe'),
+      list: $('#lm-list'),
+      current: $('#lm-current'),
+      hud: $('#stage-hud'),
+      getFacing: () => state.facing,
+      onChange: () => { last = null; updateNav(); save(); },
+    });
+    editor.bindPanel();
+
+    $('#view-tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-view]');
+      if (b) showView(b.dataset.view);
+    });
+    $('#stage-tools').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tool]');
+      if (!b) return;
+      const t = b.dataset.tool;
+      const center = { x: editor.cw / 2, y: editor.ch / 2 };
+      if (t === 'place' || t === 'pan') {
+        editor.setMode(t);
+        $$('[data-tool="place"], [data-tool="pan"]').forEach((x) => x.classList.toggle('on', x.dataset.tool === t));
+      } else if (t === 'zoom-in') editor.zoomAt(center, 1.4);
+      else if (t === 'zoom-out') editor.zoomAt(center, 1 / 1.4);
+      else if (t === 'fit') editor.fit();
+      else if (t === 'facing') toggleFacing();
+    });
+    $('#btn-seed').addEventListener('click', () => {
+      editor.seedTemplate();
+      toast('Template seeded. Drag each node onto the true anatomical point.');
+    });
+    $('#btn-clear-view').addEventListener('click', () => {
+      if (placedCount(state.view) && window.confirm(`Clear all ${state.view} landmarks?`)) editor.clearAll();
+    });
+    $('#btn-analyze').addEventListener('click', analyze);
+    $$('[data-goto]').forEach((b) => b.addEventListener('click', () => go(b.dataset.goto)));
+  }
+
+  // ---------- analysis & results ----------
+  function computeAll() {
+    const analysis = M.metrics.compute(state.landmarks, state.sex);
+    const result = M.scoring.score(analysis);
+    last = { analysis, result };
+    return last;
+  }
+
+  function renderResults(animate) {
+    M.results.render($('#results-root'), {
+      ...last, images, landmarks: state.landmarks, sex: state.sex, animate,
+      onAdjust: () => go('landmarks'),
+      onNew: resetAll,
+      toast,
+    });
+  }
+
+  function analyze() {
+    if (!complete()) { toast('Place every landmark in both views first.'); return; }
+    computeAll();
+    M.results.scan({ images, landmarks: state.landmarks }, () => {
+      state.screen = 'results';
+      save();
+      $$('.screen').forEach((s) => { s.hidden = s.id !== 'screen-results'; });
+      updateNav();
+      window.scrollTo({ top: 0 });
+      renderResults(true);
+    });
+  }
+
+  function resetAll() {
+    if (!window.confirm('Start over with a new subject? Photos and landmarks will be cleared.')) return;
+    for (const v of VIEWS) { state.photos[v] = null; state.landmarks[v] = {}; images[v] = null; renderCaptureCard(v); }
+    last = null;
+    save();
+    go('capture');
+  }
+
+  function setSex(sex) {
+    if (sex === state.sex) return;
+    state.sex = sex;
+    save();
+    updateNav();
+    if (last) {
+      computeAll();
+      if (state.screen === 'results') renderResults(false);
+    }
+    toast(`Scoring standard: ${sex === 'male' ? '♂ Male' : '♀ Female'}`);
+  }
+
+  // ---------- calibration protocol ----------
+  function openCalibration() {
+    $('#calibration-modal').hidden = false;
+    updateCalibration();
+  }
+  function closeModal(m) {
+    if (m.id === 'camera-modal') M.capture.closeCamera();
+    else m.hidden = true;
+  }
+
+  function updateCalibration() {
+    const items = $$('.cal-item');
+    let n = 0;
+    for (const it of items) {
+      const ok = $('.confirm input', it).checked;
+      it.classList.toggle('ok', ok);
+      n += ok;
+    }
+    $('#cal-count').textContent = `${n}/${items.length}`;
+    $('#cal-go').disabled = n < items.length;
+  }
+
+  function initCalibration() {
+    const modal = $('#calibration-modal');
+    modal.addEventListener('change', (e) => { if (e.target.matches('.confirm input')) updateCalibration(); });
+    $('#cal-go').addEventListener('click', () => {
+      state.calibrated = true;
+      save();
+      modal.hidden = true;
+      go(state.screen === 'results' && !last ? 'capture' : state.screen);
+      updateNav();
+    });
+
+    // focal distance demo: nose inflation ≈ d / (d − nose projection)
+    const focal = $('#focal-range');
+    const updFocal = () => {
+      const ft = Number(focal.value);
+      const m = ft * 0.3048;
+      const infl = m / (m - 0.06) - 1;
+      $('#focal-dist').textContent = `${ft.toFixed(1)} ft · ${m.toFixed(1)} m`;
+      const out = $('#focal-distortion');
+      out.textContent = `+${(infl * 100).toFixed(1)}% nasal / midface inflation`;
+      out.className = ft >= 6 ? 'ok' : ft >= 4 ? 'warn' : 'bad';
+      const nose = $('#focal-nose');
+      nose.setAttribute('rx', (9 * (1 + infl * 2.2)).toFixed(2));
+      nose.setAttribute('ry', (13 * (1 + infl * 1.6)).toFixed(2));
+      const earScale = Math.max(0.15, 1 - infl * 2.5);
+      for (const id of ['focal-ear-l', 'focal-ear-r']) $('#' + id).setAttribute('rx', (9 * earScale).toFixed(2));
+    };
+    focal.addEventListener('input', updFocal);
+    updFocal();
+
+    const notes = {
+      flat: ['ok', '✓ Even, shadow-less: true geometry visible'],
+      top: ['bad', '✕ Fake brow projection, hollowed under-eyes'],
+      side: ['bad', '✕ Half-face shadow distorts symmetry'],
+    };
+    $('#light-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-light]');
+      if (!b) return;
+      $$('#light-seg button').forEach((x) => x.classList.toggle('on', x === b));
+      $('#light-face').setAttribute('fill', `url(#lg-${b.dataset.light})`);
+      const [cls, txt] = notes[b.dataset.light];
+      const n = $('#light-note');
+      n.className = cls;
+      n.textContent = txt;
+    });
+
+    const fh = $('#fh-range');
+    const updFh = () => {
+      const a = Number(fh.value);
+      $('#fh-head').setAttribute('transform', `rotate(${-a} 100 85)`);
+      $('#fh-angle').textContent = `${a > 0 ? '+' : a < 0 ? '−' : ''}${Math.abs(a)}°`;
+      const note = $('#fh-note');
+      if (Math.abs(a) <= 1) { note.textContent = '✓ Frankfurt plane level'; note.className = 'ok'; }
+      else { note.textContent = a > 0 ? 'Chin up: tilt head down' : 'Chin down: tilt head up'; note.className = Math.abs(a) > 5 ? 'bad' : 'warn'; }
+    };
+    fh.addEventListener('input', updFh);
+    updFh();
+  }
+
+  // ---------- global wiring ----------
+  function initGlobal() {
+    $('#stepper').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-step]');
+      if (b) go(b.dataset.step);
+    });
+    document.addEventListener('click', (e) => {
+      const sx = e.target.closest('[data-sex]');
+      if (sx) setSex(sx.dataset.sex);
+      const op = e.target.closest('[data-open="calibration"]');
+      if (op) openCalibration();
+      const cl = e.target.closest('[data-close]');
+      if (cl) closeModal(cl.closest('.modal'));
+    });
+    $$('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModal(m); }));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const open = $$('.modal').find((m) => !m.hidden);
+        if (open) { closeModal(open); return; }
+      }
+      if (state.screen === 'landmarks' && $$('.modal').every((m) => m.hidden)) editor.handleKey(e);
+    });
+    document.addEventListener('keyup', (e) => { if (state.screen === 'landmarks') editor.handleKey(e); });
+    let rt = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(rt);
+      rt = setTimeout(() => { if (last && state.screen === 'results') M.results.redrawAnnotations($('#results-root'), { ...last, images, landmarks: state.landmarks }); }, 150);
+    });
+  }
+
+  async function init() {
+    restore();
+    for (const v of VIEWS) {
+      if (state.photos[v]) {
+        try { images[v] = await M.capture.loadImage(state.photos[v].src); }
+        catch (e) { state.photos[v] = null; state.landmarks[v] = {}; }
+      }
+    }
+    M.capture.initCamera();
+    initCalibration();
+    initCapture();
+    initLandmarks();
+    initGlobal();
+    VIEWS.forEach(renderCaptureCard);
+
+    let screen = state.screen;
+    if (screen === 'results') {
+      if (bothPhotos() && complete()) {
+        computeAll();
+        state.screen = 'results';
+        $$('.screen').forEach((s) => { s.hidden = s.id !== 'screen-results'; });
+        renderResults(false);
+        updateNav();
+      } else go(bothPhotos() ? 'landmarks' : 'capture');
+    } else go(screen === 'landmarks' && !bothPhotos() ? 'capture' : screen);
+
+    if (!state.calibrated) openCalibration();
+  }
+
+  M.app = { state, go };
+  document.addEventListener('DOMContentLoaded', init);
+})(window.MOG = window.MOG || {});
+
+</script>
+</body>
+</html>

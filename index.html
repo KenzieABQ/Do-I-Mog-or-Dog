@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Do I Mog or Dog</title>
+<meta name="description" content="Landmark-based facial geometry analyzer: frontal + profile morphometrics and a strict PSL verdict.">
+<meta name="theme-color" content="#0A0A0C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0C'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2339FF14' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%2300F0FF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 2v6M16 24v6M2 16h6M24 16h6" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="3" fill="#00F0FF"/></svg>
+    <div>
+      <div class="brand-name">DO I <em>MOG</em> OR <em class="dog">DOG</em></div>
+      <div class="brand-sub">PSL Morphometric Engine · v1.0</div>
+    </div>
+  </div>
+  <nav class="stepper" id="stepper" aria-label="Workflow">
+    <button data-step="calibrate"><b>01</b><span>Calibrate</span></button>
+    <button data-step="capture"><b>02</b><span>Capture</span></button>
+    <button data-step="landmarks"><b>03</b><span>Landmarks</span></button>
+    <button data-step="results"><b>04</b><span>Verdict</span></button>
+  </nav>
+  <div class="seg" data-sex-seg role="group" aria-label="Scoring standard">
+    <button data-sex="male">♂ Male</button><button data-sex="female">♀ Female</button>
+  </div>
+</header>
+
+<main>
+  <!-- STEP 02: CAPTURE -->
+  <section class="screen" id="screen-capture">
+    <div class="screen-head">
+      <div>
+        <div class="eyebrow">Step 02 · Image Acquisition</div>
+        <h1>Capture Frontal &amp; Profile</h1>
+        <p class="lede">Two calibrated photos: telephoto, flat light, neutral face, Frankfurt plane level. Garbage in, garbage verdict.</p>
+      </div>
+      <button class="btn ghost" data-open="calibration">⚙ Calibration Protocol</button>
+    </div>
+
+    <div class="capture-grid">
+      <article class="capture-card" data-view="frontal">
+        <header>
+          <span class="tag">A</span>
+          <h2>Frontal View</h2>
+          <span class="status-pill" data-role="status">Awaiting</span>
+        </header>
+        <div class="viewport" data-role="viewport">
+          <img data-role="photo" alt="Frontal photo">
+          <div class="overlay" data-role="overlay"></div>
+          <div class="placeholder">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="10" width="40" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="25" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10l3-5h10l3 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            <p>Drop a frontal photo here<br><small>Face camera squarely · eyes on the EYE LEVEL line</small></p>
+          </div>
+        </div>
+        <div class="card-actions">
+          <label class="btn">⇪ Upload<input type="file" accept="image/*" hidden data-role="file"></label>
+          <button class="btn" data-role="camera">◉ Camera</button>
+          <button class="btn ghost" data-role="guides">Guides</button>
+          <button class="btn ghost danger" data-role="clear">Clear</button>
+        </div>
+      </article>
+
+      <article class="capture-card" data-view="profile">
+        <header>
+          <span class="tag">B</span>
+          <h2>Profile View (90°)</h2>
+          <span class="status-pill" data-role="status">Awaiting</span>
+        </header>
+        <div class="viewport" data-role="viewport">
+          <img data-role="photo" alt="Profile photo">
+          <div class="overlay" data-role="overlay"></div>
+          <div class="placeholder">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="10" width="40" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="25" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10l3-5h10l3 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            <p>Drop a true 90° side profile here<br><small>Ear visible · jaw relaxed · FH plane level</small></p>
+          </div>
+        </div>
+        <div class="card-actions">
+          <label class="btn">⇪ Upload<input type="file" accept="image/*" hidden data-role="file"></label>
+          <button class="btn" data-role="camera">◉ Camera</button>
+          <button class="btn ghost" data-role="facing" title="Which way the face points in the photo">Facing ▶</button>
+          <button class="btn ghost" data-role="guides">Guides</button>
+          <button class="btn ghost danger" data-role="clear">Clear</button>
+        </div>
+      </article>
+    </div>
+
+    <div class="screen-foot">
+      <button class="btn ghost" id="btn-demo">⚗ Load Demo Subject</button>
+      <div class="foot-status" id="capture-status"></div>
+      <button class="btn primary" id="btn-to-landmarks" disabled>Place Landmarks →</button>
+    </div>
+  </section>
+
+  <!-- STEP 03: LANDMARKS -->
+  <section class="screen" id="screen-landmarks" hidden>
+    <div class="screen-head">
+      <div>
+        <div class="eyebrow">Step 03 · Landmark Registration</div>
+        <h1>Place Anatomical Nodes</h1>
+        <p class="lede">Click the photo to drop the highlighted node, drag any node to refine. The loupe magnifies 2.5×. Arrow keys nudge 1 px (Shift 10 px, Alt 0.25 px). Scroll or pinch to zoom.</p>
+      </div>
+      <div class="view-tabs" id="view-tabs" role="tablist">
+        <button data-view="frontal" role="tab">Frontal <span data-count="frontal">0/0</span></button>
+        <button data-view="profile" role="tab">Profile <span data-count="profile">0/0</span></button>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="stage" id="stage">
+        <canvas id="editor-canvas" aria-label="Landmark placement canvas"></canvas>
+        <canvas id="loupe" class="loupe" aria-hidden="true"></canvas>
+        <div class="stage-tools" id="stage-tools">
+          <button data-tool="place" class="on" title="Place and drag nodes">✛ Place</button>
+          <button data-tool="pan" title="Pan the photo (or hold Space)">✥ Pan</button>
+          <button data-tool="zoom-in" title="Zoom in">＋</button>
+          <button data-tool="zoom-out" title="Zoom out">－</button>
+          <button data-tool="fit" title="Fit photo">Fit</button>
+          <button data-tool="facing" class="profile-only" title="Profile facing direction (affects template seeding)">Facing ▶</button>
+        </div>
+        <div class="stage-hud" id="stage-hud"></div>
+      </div>
+      <aside class="panel">
+        <div class="current" id="lm-current"></div>
+        <div class="lm-list" id="lm-list"></div>
+        <div class="panel-actions">
+          <button class="btn" id="btn-seed" title="Drop every unplaced node at its template position, then drag to fit">⌖ Auto-Seed Template</button>
+          <button class="btn ghost danger" id="btn-clear-view">Clear View</button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="screen-foot">
+      <button class="btn ghost" data-goto="capture">← Photos</button>
+      <div class="foot-status" id="lm-status"></div>
+      <button class="btn primary big" id="btn-analyze" disabled>Analyze Face</button>
+    </div>
+  </section>
+
+  <!-- STEP 04: RESULTS -->
+  <section class="screen" id="screen-results" hidden>
+    <div id="results-root"></div>
+  </section>
+</main>
+
+<footer class="disclaimer">
+  Entertainment tool. Single-photo 2D landmark geometry is noisy, and these community "PSL" thresholds are heuristics, not clinical or scientific measures of attractiveness or worth. Photos never leave your device.
+</footer>
+
+<!-- CALIBRATION PROTOCOL -->
+<div class="modal" id="calibration-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cal-title">
+  <div class="modal-card cal">
+    <header class="cal-head">
+      <div>
+        <div class="eyebrow">Step 01 · Pre-Capture</div>
+        <h2 id="cal-title">Do I Mog or Dog: <span>Calibration Protocol</span></h2>
+        <p class="lede">Lens distortion, lighting and head posture swing these measurements by whole tiers. Confirm each control before capture.</p>
+      </div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="cal-grid">
+      <section class="cal-item" data-key="focal">
+        <div class="cal-num">01</div>
+        <h3>Focal Length Calibration</h3>
+        <div class="cal-viz">
+          <svg viewBox="0 0 200 170" id="focal-svg" aria-hidden="true">
+            <ellipse id="focal-ear-l" cx="52" cy="88" rx="9" ry="18" class="viz-skin2"/>
+            <ellipse id="focal-ear-r" cx="148" cy="88" rx="9" ry="18" class="viz-skin2"/>
+            <ellipse cx="100" cy="85" rx="48" ry="62" class="viz-skin"/>
+            <ellipse cx="82" cy="74" rx="9" ry="4" class="viz-eye"/><ellipse cx="118" cy="74" rx="9" ry="4" class="viz-eye"/>
+            <ellipse id="focal-nose" cx="100" cy="98" rx="9" ry="13" class="viz-nose"/>
+            <path d="M86 122 Q100 127 114 122" class="viz-line"/>
+          </svg>
+          <div class="cal-readout"><b id="focal-dist">6.5 ft</b><span id="focal-distortion">+2.9% nasal inflation</span></div>
+          <input type="range" id="focal-range" min="1" max="10" step="0.5" value="6.5" aria-label="Camera distance in feet">
+        </div>
+        <ul>
+          <li>Shoot from <b>≥ 6 ft (2 m)</b> away using <b>2× / 3× optical zoom</b>.</li>
+          <li>Selfie-distance wide-angle lenses inflate midface length and nose size and hide the ears.</li>
+        </ul>
+        <label class="confirm"><input type="checkbox"><span>Telephoto from ≥ 6 ft confirmed</span></label>
+      </section>
+
+      <section class="cal-item" data-key="light">
+        <div class="cal-num">02</div>
+        <h3>Lighting</h3>
+        <div class="cal-viz">
+          <svg viewBox="0 0 200 170" aria-hidden="true">
+            <defs>
+              <radialGradient id="lg-flat" cx="50%" cy="45%" r="65%"><stop offset="0" stop-color="#e2b496"/><stop offset="1" stop-color="#c6957a"/></radialGradient>
+              <linearGradient id="lg-top" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3caa9"/><stop offset=".38" stop-color="#c38f72"/><stop offset=".45" stop-color="#5a3a2c"/><stop offset=".6" stop-color="#9c6e56"/><stop offset="1" stop-color="#3d281e"/></linearGradient>
+              <linearGradient id="lg-side" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f6cfae"/><stop offset=".5" stop-color="#b98468"/><stop offset="1" stop-color="#2e1e17"/></linearGradient>
+            </defs>
+            <ellipse cx="100" cy="85" rx="48" ry="62" id="light-face" fill="url(#lg-flat)"/>
+            <ellipse cx="82" cy="74" rx="9" ry="4" class="viz-eye"/><ellipse cx="118" cy="74" rx="9" ry="4" class="viz-eye"/>
+            <path d="M100 80 L96 104 Q100 108 104 104" class="viz-line"/>
+            <path d="M86 122 Q100 127 114 122" class="viz-line"/>
+          </svg>
+          <div class="seg small" id="light-seg">
+            <button data-light="flat" class="on">Flat</button><button data-light="top">Top-down</button><button data-light="side">Side</button>
+          </div>
+          <div class="cal-readout"><span id="light-note" class="ok">✓ Even, shadow-less: true geometry visible</span></div>
+        </div>
+        <ul>
+          <li><b>Flat, shadow-less frontal light</b> (window or ring light in front).</li>
+          <li>Top-down light fakes brow ridge projection; side light distorts symmetry.</li>
+        </ul>
+        <label class="confirm"><input type="checkbox"><span>Flat frontal lighting confirmed</span></label>
+      </section>
+
+      <section class="cal-item" data-key="expr">
+        <div class="cal-num">03</div>
+        <h3>Neutral Posture &amp; Expression</h3>
+        <div class="cal-viz">
+          <ul class="expr-list">
+            <li><i>◉</i> Strictly neutral face</li>
+            <li><i>▤</i> Teeth closed in occlusion</li>
+            <li><i>◡</i> Soft lip closure, no strain</li>
+            <li><i>✕</i> No smiling</li>
+            <li><i>◎</i> No squinting, eyes relaxed</li>
+            <li><i>↧</i> Shoulders down, no chin tuck</li>
+          </ul>
+        </div>
+        <ul>
+          <li>Smiling raises the cheilion and compresses the eye area; squinting fakes positive tilt.</li>
+        </ul>
+        <label class="confirm"><input type="checkbox"><span>Neutral expression confirmed</span></label>
+      </section>
+
+      <section class="cal-item" data-key="fh">
+        <div class="cal-num">04</div>
+        <h3>Frankfurt Horizontal Plane</h3>
+        <div class="cal-viz">
+          <svg viewBox="0 0 200 170" aria-hidden="true">
+            <line x1="0" y1="80" x2="200" y2="80" class="viz-ground"/>
+            <g id="fh-head" transform="rotate(0 100 85)">
+              <path class="viz-skin" d="M70 150 C70 135 66 125 60 115 C46 100 42 72 50 52 C60 26 86 14 112 16 C134 18 146 34 148 50 C150 58 150 64 149 68 L160 92 C162 96 157 98 153 98 C154 104 152 108 150 112 C152 118 148 126 140 130 C132 134 124 132 118 134 C116 140 116 146 118 150 Z"/>
+              <ellipse cx="82" cy="78" rx="7" ry="11" class="viz-skin2"/>
+              <circle cx="82" cy="72" r="2.6" class="viz-pt"/>
+              <circle cx="138" cy="72" r="2.6" class="viz-pt"/>
+              <line x1="60" y1="72" x2="170" y2="72" class="viz-fh"/>
+            </g>
+          </svg>
+          <div class="cal-readout"><b id="fh-angle">+6°</b><span id="fh-note">Head pitched up: tilt down</span></div>
+          <input type="range" id="fh-range" min="-15" max="15" step="1" value="6" aria-label="Head pitch in degrees">
+        </div>
+        <ul>
+          <li>The line from the <b>infraorbital rim</b> (orbitale) to the <b>top of the ear canal</b> (porion) must be <b>0°, parallel to the ground</b>.</li>
+          <li>Chin up flattens the jaw and shrinks the gonial angle; chin down does the reverse.</li>
+        </ul>
+        <label class="confirm"><input type="checkbox"><span>Frankfurt plane level confirmed</span></label>
+      </section>
+    </div>
+
+    <footer class="cal-foot">
+      <div class="cal-sex"><span>Scoring standard</span>
+        <div class="seg" data-sex-seg><button data-sex="male">♂ Male</button><button data-sex="female">♀ Female</button></div>
+      </div>
+      <div class="cal-progress"><b id="cal-count">0/4</b> controls confirmed</div>
+      <button class="btn primary" id="cal-go" disabled>Initialize Protocol →</button>
+    </footer>
+  </div>
+</div>
+
+<!-- CAMERA -->
+<div class="modal" id="camera-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cam-title">
+  <div class="modal-card cam">
+    <header class="cam-head">
+      <div><div class="eyebrow">Live Capture</div><h2 id="cam-title">Frontal View</h2></div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </header>
+    <div class="cam-view" id="cam-view">
+      <video id="cam-video" playsinline muted autoplay></video>
+      <div class="overlay" id="cam-overlay"></div>
+      <div class="cam-countdown" id="cam-countdown"></div>
+      <div class="cam-error" id="cam-error" hidden></div>
+    </div>
+    <div class="cam-controls">
+      <button class="btn ghost" id="cam-flip">⟲ Switch Camera</button>
+      <label class="cam-zoom" id="cam-zoom-wrap" hidden>Zoom <input type="range" id="cam-zoom" min="1" max="3" step="0.1" value="1"> <b id="cam-zoom-val">1.0×</b></label>
+      <div class="seg small" id="cam-timer"><button data-t="0" class="on">No timer</button><button data-t="3">3 s</button><button data-t="10">10 s</button></div>
+      <button class="btn primary" id="cam-shoot">● Capture</button>
+    </div>
+    <p class="cam-tip">Stand ≥ 6 ft (2 m) away and use 2×–3× zoom. Put your eyes on the EYE LEVEL line and your nose on the centerline. Use the 10 s timer with a tripod.</p>
+  </div>
+</div>
+
+<!-- SCAN SEQUENCE -->
+<div class="scan-overlay" id="scan-overlay" hidden aria-live="polite">
+  <div class="scan-frame">
+    <div class="scan-title"><span class="blink">Extracting Gonial &amp; Midface Vector Data...</span></div>
+    <div class="scan-panels">
+      <div class="scan-panel"><canvas data-view="frontal"></canvas><span class="scan-label">FRONTAL · MESH</span></div>
+      <div class="scan-panel"><canvas data-view="profile"></canvas><span class="scan-label">PROFILE · MESH</span></div>
+    </div>
+    <div class="scan-progress"><i id="scan-bar"></i></div>
+    <div class="scan-sub" id="scan-sub"></div>
+    <pre class="scan-log" id="scan-log"></pre>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/geometry.js"></script>
+<script src="js/landmarks.js"></script>
+<script src="js/metrics.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/capture.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/results.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
